@@ -2,11 +2,11 @@
 
 ## 1. Project Initialization
 - [x] Initialize Next.js project locally in `scratch/al-muallim`.
-- [ ] Connect local repository to GitHub.
+- [x] Connect local repository to GitHub.
 - [x] Install Supabase client dependencies.
 
 ## 2. Core Foundation
-- [ ] Setup Tailwind CSS matching design colors (Deep Green).
+- [x] Setup Tailwind CSS matching design colors (Deep Green).
 - [ ] Configure Supabase client and environment variables.
 - [ ] Setup authentication context and route protection.
 
