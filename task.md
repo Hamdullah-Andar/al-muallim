@@ -7,7 +7,7 @@
 
 ## 2. Core Foundation
 - [x] Setup Tailwind CSS matching design colors (Deep Green).
-- [ ] Configure Supabase client and environment variables.
+- [x] Configure Supabase client and environment variables.
 - [ ] Setup authentication context and route protection.
 
 ## 3. Database Schema & API
