@@ -32,14 +32,19 @@ export default function RootLayout({
 }>) {
   return (
     // We attach our font variable to the <html> tag so it cascades down to all elements.
-    <html lang="en" className={`${outfit.variable} antialiased h-full`}>
+    // We add suppressHydrationWarning because browser extensions (like Grammarly) 
+    // inject code into the HTML, which causes noisy React warnings in development.
+    <html lang="en" className={`${outfit.variable} antialiased h-full`} suppressHydrationWarning>
       {/* 
         We use Tailwind classes here:
         - min-h-full & flex-col: Ensures the page takes up the full height of the screen.
         - bg-background & text-foreground: Applies our light/dark mode colors from globals.css.
         - selection:bg-primary-500: When a user highlights text, it highlights in our Deep Green!
       */}
-      <body className="min-h-full flex flex-col bg-background text-foreground selection:bg-primary-500 selection:text-white">
+      <body 
+        className="min-h-full flex flex-col bg-background text-foreground selection:bg-primary-500 selection:text-white"
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>
