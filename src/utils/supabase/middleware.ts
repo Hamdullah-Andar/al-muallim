@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
 
   // ROUTE PROTECTION LOGIC
   // Check if the user is trying to access the login or signup pages
-  const isAuthRoute = request.nextUrl.pathname.startsWith('/login');
+  const isAuthRoute = request.nextUrl.pathname.startsWith('/login') || request.nextUrl.pathname.startsWith('/register');
   
   // If the user is NOT logged in, and they are NOT on the login page or the home page...
   if (!user && !isAuthRoute && request.nextUrl.pathname !== '/') {

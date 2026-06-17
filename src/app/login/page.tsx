@@ -1,4 +1,5 @@
 import { login } from './actions'
+import Link from 'next/link'
 
 /*
   What is this file doing?
@@ -67,7 +68,15 @@ export default async function LoginPage(props: {
             {searchParams.message}
           </p>
         )}
-      </form>
+
+        {/* Link to Registration Page */}
+        <div className="mt-8 text-center text-sm opacity-80">
+            Don't have an account?{' '}
+            <Link href="/register" className="text-primary-600 dark:text-primary-400 hover:underline font-semibold">
+              Create Account
+            </Link>
+          </div>
+        </form>
     </div>
   )
 }

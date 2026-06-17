@@ -23,7 +23,7 @@
 - [ ] Setup Swagger/OpenAPI documentation for custom API routes.
 
 ## 4. UI Implementation (Teacher)
-- [ ] Register / Sign Up Page.
+- [x] Register / Sign Up Page.
 - [ ] Teacher Dashboard (Analytics, Active Classes).
 - [ ] Create Class Flow.
 - [ ] Create Assignment Flow (Dynamic forms for Zikr, Reading, etc.).
