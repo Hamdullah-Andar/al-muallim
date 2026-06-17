@@ -8,19 +8,22 @@
 ## 2. Core Foundation
 - [x] Setup Tailwind CSS matching design colors (Deep Green).
 - [x] Configure Supabase client and environment variables.
-- [ ] Setup authentication context and route protection.
+- [x] Setup authentication context and route protection.
 
 ## 3. Database Schema & API
-- [ ] Create Supabase SQL migrations for:
-  - Users
-  - Classes
-  - Class_Students
-  - Assignments (with JSONB)
+- [x] Create Supabase SQL migrations for:
+  - Profiles (Users & Roles)
+  - Classes & Class_Students
+  - Assignments (with dynamic JSONB content)
   - Student_Progress
+  - Books
+  - Class_Discussions (with Announcements)
+  - Achievements (Badges)
 - [ ] Write API routes/Server Actions to interact with database.
 - [ ] Setup Swagger/OpenAPI documentation for custom API routes.
 
 ## 4. UI Implementation (Teacher)
+- [ ] Register / Sign Up Page.
 - [ ] Teacher Dashboard (Analytics, Active Classes).
 - [ ] Create Class Flow.
 - [ ] Create Assignment Flow (Dynamic forms for Zikr, Reading, etc.).
