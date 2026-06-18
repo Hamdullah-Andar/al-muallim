@@ -1,4 +1,5 @@
 import { createClient } from '@/utils/supabase/server'
+import CreateClassModal from '@/components/CreateClassModal'
 
 export default async function TeacherDashboard() {
   const supabase = await createClient()
@@ -21,9 +22,7 @@ export default async function TeacherDashboard() {
           <h1 className="text-4xl font-bold mb-2 font-arabic tracking-tight text-foreground">As-salamu alaykum, {firstName}</h1>
           <p className="text-lg opacity-70">Your students have completed 0 tasks this morning. Ready to start a new lesson?</p>
         </div>
-        <button className="bg-primary-700 hover:bg-primary-800 text-white px-6 py-3 rounded-lg font-medium shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5 whitespace-nowrap">
-          + Create New Class
-        </button>
+        <CreateClassModal />
       </div>
 
       {/* STATS ROW */}
