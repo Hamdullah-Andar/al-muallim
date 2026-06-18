@@ -1,17 +1,27 @@
 import { createClient } from '@/utils/supabase/server'
 import CreateClassModal from '@/components/CreateClassModal'
+import Link from 'next/link'
 
 export default async function TeacherDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  // Fetch the teacher's profile
   const { data: profile } = await supabase
     .from('profiles')
     .select('full_name')
     .eq('id', user?.id)
     .single()
 
-  const firstName = profile?.full_name?.split(' ')[0] || 'Teacher'
+  // Fetch the teacher's classes
+  const { data: classes } = await supabase
+    .from('classes')
+    .select('*')
+    .eq('teacher_id', user?.id)
+    .order('created_at', { ascending: false })
+
+  const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Teacher'
+  const activeClassCount = classes?.length || 0
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -61,8 +71,8 @@ export default async function TeacherDashboard() {
             <p className="text-xs font-bold uppercase tracking-wider">Active Classes</p>
           </div>
           <div className="flex items-end justify-between">
-            <h3 className="text-4xl font-bold">0</h3>
-            <span className="text-sm opacity-60 font-medium">0 New this week</span>
+            <span className="text-4xl font-bold">{activeClassCount}</span>
+            <span className="text-sm font-medium opacity-60">Total</span>
           </div>
         </div>
 
@@ -81,17 +91,40 @@ export default async function TeacherDashboard() {
               <button className="text-sm text-primary-600 dark:text-primary-400 font-bold hover:underline">View All</button>
             </div>
             
-            {/* Empty State */}
-            <div className="bg-white dark:bg-black/40 p-12 rounded-xl border border-dashed border-black/20 dark:border-white/20 flex flex-col items-center justify-center text-center shadow-sm">
-              <div className="w-20 h-20 bg-primary-50 dark:bg-primary-900/20 rounded-full flex items-center justify-center mb-6">
-                <svg className="w-10 h-10 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+            {activeClassCount === 0 ? (
+              <div className="bg-white dark:bg-black/40 p-12 rounded-xl border border-dashed border-black/20 dark:border-white/20 flex flex-col items-center justify-center text-center shadow-sm">
+                <div className="w-20 h-20 bg-primary-50 dark:bg-primary-900/20 rounded-full flex items-center justify-center mb-6">
+                  <svg className="w-10 h-10 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                </div>
+                <h3 className="text-xl font-bold mb-2">No Active Classes</h3>
+                <p className="opacity-70 max-w-sm mb-8">You haven't created any classes yet. Create your first class using the button above.</p>
               </div>
-              <h3 className="text-xl font-bold mb-2">No Active Classes</h3>
-              <p className="opacity-70 max-w-sm mb-8">You haven't created any classes yet. Create your first class to invite students and assign tasks.</p>
-              <button className="bg-primary-100 hover:bg-primary-200 dark:bg-primary-900 dark:hover:bg-primary-800 text-primary-800 dark:text-primary-200 px-6 py-3 rounded-lg font-bold transition-colors">
-                Create First Class
-              </button>
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {classes?.map((c) => (
+                  <Link 
+                    href={`/teacher/class/${c.id}`} 
+                    key={c.id}
+                    className="group block p-5 rounded-xl border border-black/5 dark:border-white/5 bg-white dark:bg-black/40 shadow-sm hover:border-primary-500 hover:shadow-md transition-all cursor-pointer relative overflow-hidden"
+                  >
+                    <div className="absolute top-0 left-0 w-1 h-full bg-primary-500 transform origin-left scale-y-0 group-hover:scale-y-100 transition-transform"></div>
+                    <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold text-lg group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">{c.name}</h3>
+                      <span className="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-mono font-bold px-2 py-1 rounded">
+                        {c.class_code}
+                      </span>
+                    </div>
+                    {c.description && (
+                      <p className="text-sm opacity-60 mb-4 line-clamp-1">{c.description}</p>
+                    )}
+                    <div className="flex items-center gap-2 text-sm font-medium text-primary-600 dark:text-primary-400 mt-2">
+                      <span>Enter Class</span>
+                      <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" /></svg>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Student Progress Heatmap */}
