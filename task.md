@@ -24,7 +24,7 @@
 
 ## 4. UI Implementation (Teacher)
 - [x] Register / Sign Up Page.
-- [ ] Teacher Dashboard (Analytics, Active Classes).
+- [x] Teacher Dashboard (Analytics, Active Classes).
 - [ ] Create Class Flow.
 - [ ] Create Assignment Flow (Dynamic forms for Zikr, Reading, etc.).
 - [ ] Class Detail View (Student progress list).
