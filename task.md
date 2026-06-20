@@ -31,7 +31,7 @@
 
 ## 5. UI Implementation (Student)
 - [ ] Student Dashboard (Streak, Daily Focus).
-- [ ] Join Class Flow.
+- [x] Join Class Flow.
 - [ ] Assignment Completion Flow (Marking Zikr/Prayers complete).
 - [ ] Personal Performance Analytics View.
 

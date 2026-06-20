@@ -2,6 +2,35 @@
 
 Based on the requirements and the "Al-Mu'allim" designs provided, this application will serve as a platform for teachers to assign daily religious practices, track student progress, and allow students to build their own habits.
 
+### Phase 5: UI Implementation (Student)
+
+This phase focuses on the mobile-first student experience. The goal is to make it incredibly easy and rewarding for students to log their daily habits.
+
+#### 1. Join Class Flow
+- **`src/app/student/join/page.tsx`**: A simple, aesthetic screen where the student enters the 6-character Class Code provided by their teacher.
+- **Server Action (`actions.ts`)**: 
+  - Validates the code against the `classes` table.
+  - Inserts a new record into `class_students` linking the student to the class.
+  - Redirects them instantly to their new Dashboard.
+
+#### 2. Student Dashboard (`src/app/student/dashboard/page.tsx`)
+- **The "Salam" Header**: Welcomes the student by name and displays a 🔥 **Streak Counter** (calculated by checking consecutive days of activity in `student_progress`).
+- **Data Fetching Engine**:
+  - Fetch all active `assignments` from classes the student is enrolled in.
+  - Fetch today's `student_progress` logs to see what is already done.
+  - Group the assignments by `category` (e.g., all "Prayer" tasks together, all "Zikr" tasks together) so the UI perfectly matches the user's daily routine.
+
+#### 3. Dynamic Assignment Completion Components
+Because our assignments are infinitely flexible, our completion UI must be too. We will build two interactive Client Components:
+- **`CheckboxTracker.tsx`**: For 'checkbox' assignments (like Prayers). A large, satisfying button. Tapping it instantly saves `{ is_completed: true }` to the database.
+- **`CounterTracker.tsx`**: For 'counter' assignments (like 200 Zikr or 30 mins Sport). 
+  - Displays a progress bar (e.g., 50/200).
+  - Tapping it opens a quick "Log Progress" drawer where they can type a number, or use a "+" button like a digital Tasbeeh.
+  - Saves the `quantity` to the database. If `quantity >= target`, it automatically marks `is_completed = true`.
+
+#### 4. Personal Analytics (`src/app/student/analytics/page.tsx`)
+- A visually rewarding page showing the student their completion rates over the week/month, helping them visualize their habit-building journey.
+
 ## Proposed GitHub Repository Names
 - `al-muallim` (Based on the title in the design mockup)
 - `tarbiyah-tracker`

@@ -1,0 +1,52 @@
+'use server'
+
+import { createClient } from '@/utils/supabase/server'
+import { redirect } from 'next/navigation'
+
+export async function joinClass(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: "Not authorized" }
+
+  const classCode = formData.get('classCode') as string
+
+  if (!classCode || classCode.length !== 6) {
+    return { error: 'Invalid class code format. It must be exactly 6 characters.' }
+  }
+
+  // 1. Find the class by code
+  const { data: classData, error: classError } = await supabase
+    .from('classes')
+    .select('id')
+    .eq('class_code', classCode.toUpperCase())
+    .single()
+
+  if (classError || !classData) {
+    return { error: 'Class not found. Please verify the code with your teacher.' }
+  }
+
+  // 2. Check if already enrolled
+  const { data: existingEnrollment } = await supabase
+    .from('class_students')
+    .select('id')
+    .eq('class_id', classData.id)
+    .eq('student_id', user.id)
+    .single()
+
+  if (!existingEnrollment) {
+    // 3. Enroll the student safely
+    const { error: enrollError } = await supabase
+      .from('class_students')
+      .insert([
+        { class_id: classData.id, student_id: user.id }
+      ])
+
+    if (enrollError) {
+      console.error('Enrollment error:', enrollError)
+      return { error: 'A server error occurred while trying to join the class.' }
+    }
+  }
+
+  // Success! Send them straight to their new dashboard!
+  redirect('/student/dashboard')
+}
