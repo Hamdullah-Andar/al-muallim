@@ -27,7 +27,7 @@
 - [x] Teacher Dashboard (Analytics, Active Classes).
 - [x] Create Class Flow.
 - [x] Class Detail View (Student progress list).
-- [ ] Create Assignment Flow (Dynamic forms for Zikr, Reading, etc.).
+- [x] Create Assignment Flow (Dynamic forms for Zikr, Reading, etc.).
 
 ## 5. UI Implementation (Student)
 - [ ] Student Dashboard (Streak, Daily Focus).

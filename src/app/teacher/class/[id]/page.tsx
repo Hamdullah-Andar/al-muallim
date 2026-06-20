@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import CreateAssignmentButton from '@/components/CreateAssignmentButton'
 
 export default async function ClassDetail({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -28,6 +29,13 @@ export default async function ClassDetail({ params }: { params: Promise<{ id: st
       profiles!student_id ( full_name )
     `)
     .eq('class_id', id)
+
+  // Fetch active assignments for this class
+  const { data: assignments } = await supabase
+    .from('assignments')
+    .select('*')
+    .eq('class_id', id)
+    .order('created_at', { ascending: false })
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -131,15 +139,7 @@ export default async function ClassDetail({ params }: { params: Promise<{ id: st
           <div className="bg-white dark:bg-black/40 p-6 md:p-8 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm">
             <h2 className="text-xl font-bold mb-6">Quick Actions</h2>
             <div className="space-y-4">
-              <button className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-primary-500 text-primary-700 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 font-bold transition-colors group">
-                <div className="bg-primary-100 dark:bg-primary-900/50 p-3 rounded-lg group-hover:scale-110 transition-transform">
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                </div>
-                <div className="text-left">
-                  <p className="text-lg">Create Assignment</p>
-                  <p className="text-xs opacity-70 font-medium">Assign Zikr, Reading, etc.</p>
-                </div>
-              </button>
+              <CreateAssignmentButton classId={id} />
               
               <button className="w-full flex items-center gap-4 p-4 rounded-xl border-2 border-transparent bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 font-bold transition-colors group">
                 <div className="bg-white dark:bg-black/50 shadow-sm p-3 rounded-lg group-hover:scale-110 transition-transform">
@@ -153,14 +153,44 @@ export default async function ClassDetail({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* Recent Activity Panel */}
+          {/* Active Assignments Panel */}
           <div className="bg-white dark:bg-black/40 p-6 md:p-8 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm">
-            <h2 className="text-xl font-bold mb-6">Recent Activity</h2>
-            <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-black/10 dark:border-white/10 rounded-xl">
-               <svg className="w-12 h-12 text-black/20 dark:text-white/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              <h3 className="text-lg font-bold mb-1">Quiet in here...</h3>
-              <p className="opacity-60 text-sm font-medium">No activity in this class yet.</p>
-            </div>
+            <h2 className="text-xl font-bold mb-6">Active Assignments</h2>
+            
+            {assignments && assignments.length > 0 ? (
+              <div className="space-y-4">
+                {assignments.map(assignment => (
+                  <div key={assignment.id} className="p-4 rounded-xl border border-black/10 dark:border-white/10 flex items-center justify-between hover:border-primary-500 transition-colors">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                          {assignment.category}
+                        </span>
+                        {assignment.tracking_type === 'counter' && (
+                          <span className="text-xs opacity-60 font-medium">
+                            Target: {assignment.content.target} {assignment.content.unit}
+                          </span>
+                        )}
+                        {assignment.tracking_type === 'checkbox' && (
+                          <span className="text-xs opacity-60 font-medium">Daily Checkbox</span>
+                        )}
+                      </div>
+                      <p className="font-bold text-lg">{assignment.title}</p>
+                    </div>
+                    
+                    <button className="text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 p-2 rounded-lg transition-colors">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-black/10 dark:border-white/10 rounded-xl">
+                <svg className="w-12 h-12 text-black/20 dark:text-white/20 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <h3 className="text-lg font-bold mb-1">No assignments yet</h3>
+                <p className="opacity-60 text-sm font-medium">Create your first daily assignment above.</p>
+              </div>
+            )}
           </div>
 
         </div>
