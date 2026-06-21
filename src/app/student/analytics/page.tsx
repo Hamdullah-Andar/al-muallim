@@ -1,14 +1,83 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { calculateStudentStats } from '@/utils/gamification'
 
 export default async function StudentAnalytics() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  // In Phase 5, we are focusing on the precise UI implementation of the design.
-  // These dynamic metrics will be fully wired up to real calculation algorithms in Phase 6.
+  // 1. Fetch live Gamification Stats
+  const { currentStreak, knowledgePoints, completedTasks } = await calculateStudentStats(supabase, user.id);
+
+  // 2. Discipline Checklist & Chart Logic
+  const { data: enrollments } = await supabase.from('class_students').select('class_id').eq('student_id', user.id);
+  const classIds = enrollments?.map(e => e.class_id) || [];
+  
+  let assignments: any[] = [];
+  if (classIds.length > 0) {
+    const { data } = await supabase.from('assignments').select('id, category').in('class_id', classIds).eq('is_daily', true);
+    assignments = data || [];
+  }
+
+  // Fetch student progress for the last 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const { data: progress } = await supabase
+    .from('student_progress')
+    .select('assignment_id, is_completed, tracking_date')
+    .eq('student_id', user.id)
+    .gte('tracking_date', thirtyDaysAgo.toISOString().split('T')[0]);
+
+  // Map progress back to assignment categories
+  const categoryStats: Record<string, { completed: number, possible: number }> = {};
+  
+  assignments.forEach(a => {
+    if (!categoryStats[a.category]) {
+      categoryStats[a.category] = { completed: 0, possible: 30 }; // Assuming 30 days possible
+    } else {
+      categoryStats[a.category].possible += 30; 
+    }
+  });
+
+  progress?.forEach(p => {
+    const assignment = assignments.find(a => a.id === p.assignment_id);
+    if (assignment && p.is_completed) {
+      if (categoryStats[assignment.category]) {
+        categoryStats[assignment.category].completed += 1;
+      }
+    }
+  });
+
+  const disciplineChecklist = Object.keys(categoryStats).map(cat => ({
+    name: cat.charAt(0).toUpperCase() + cat.slice(1), // Capitalize
+    score: Math.round((categoryStats[cat].completed / categoryStats[cat].possible) * 100) || 0,
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2' // Generic assignment icon
+  }));
+
+  // Weekly Chart Logic (Last 7 Days)
+  const last7Days = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    last7Days.push(d.toISOString().split('T')[0]);
+  }
+
+  const chartData = last7Days.map(dateStr => {
+    const completedOnDay = progress?.filter(p => p.tracking_date === dateStr && p.is_completed).length || 0;
+    const dailyGoal = assignments.length;
+    const percentage = dailyGoal === 0 ? 0 : Math.round((completedOnDay / dailyGoal) * 100);
+    
+    const dateObj = new Date(dateStr);
+    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+    
+    return {
+      day: dayName,
+      percentage: percentage,
+      avgGoal: 80 // Hardcode average goal at 80% for visual reference
+    }
+  });
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-8 animate-in fade-in duration-500 bg-transparent min-h-screen">
@@ -39,7 +108,7 @@ export default async function StudentAnalytics() {
             </div>
             <div>
                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Current Streak</p>
-               <p className="text-xl font-bold text-gray-900 dark:text-white">12 Days</p>
+               <p className="text-xl font-bold text-gray-900 dark:text-white">{currentStreak} Days</p>
             </div>
          </div>
 
@@ -49,7 +118,7 @@ export default async function StudentAnalytics() {
             </div>
             <div>
                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5">Knowledge Points</p>
-               <p className="text-xl font-bold text-gray-900 dark:text-white">2,450</p>
+               <p className="text-xl font-bold text-gray-900 dark:text-white">{knowledgePoints}</p>
             </div>
          </div>
 
@@ -97,35 +166,29 @@ export default async function StudentAnalytics() {
                  <div className="w-full h-px bg-black dark:bg-white"></div>
                </div>
                
-               {/* Render Bars */}
-               {['MON','TUE','WED','THU','FRI','SAT','SUN','MON','TUE'].map((day, i) => {
-                 const h1 = Math.floor(Math.random() * 60) + 30; // Random heights for mockup design
-                 const h2 = Math.floor(Math.random() * 40) + 40; 
+               {/* Render Dynamic Bars */}
+               {chartData.map((data, i) => {
                  return (
                    <div key={i} className="flex flex-col items-center flex-1 group z-10 h-full">
                      <div className="w-full flex justify-center items-end gap-1 mb-4 h-full">
-                       <div className="w-1/3 bg-[#0a6c4c] dark:bg-emerald-500 rounded-t-sm transition-all hover:opacity-80" style={{height: `${h1}%`}}></div>
-                       <div className="w-1/3 bg-[#bdf3df] dark:bg-emerald-900 rounded-t-sm transition-all hover:opacity-80" style={{height: `${h2}%`}}></div>
+                       <div className="w-1/3 bg-[#0a6c4c] dark:bg-emerald-500 rounded-t-sm transition-all hover:opacity-80" style={{height: `${Math.max(data.percentage, 5)}%`}}></div>
+                       <div className="w-1/3 bg-[#bdf3df] dark:bg-emerald-900 rounded-t-sm transition-all hover:opacity-80" style={{height: `${data.avgGoal}%`}}></div>
                      </div>
-                     <span className="text-[9px] font-bold text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white tracking-wider">{day}</span>
+                     <span className="text-[9px] font-bold text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white tracking-wider">{data.day}</span>
                    </div>
                  )
                })}
             </div>
          </div>
 
-         {/* Right: Discipline Checklist */}
+         {/* Right: Discipline Checklist (Dynamic) */}
          <div className="bg-white dark:bg-[#1a1a1a] p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800/60">
             <h3 className="font-bold text-gray-900 dark:text-white mb-8">Discipline Checklist</h3>
             
             <div className="space-y-6">
-               {[
-                 { name: 'Daily Prayers', score: 88, icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-                 { name: 'Zikr', score: 62, icon: 'M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z' },
-                 { name: 'Quran Reading', score: 94, icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253' },
-                 { name: 'Sport', score: 50, icon: 'M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3' },
-                 { name: 'Assignments', score: 75, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01' },
-               ].map(item => (
+               {disciplineChecklist.length === 0 ? (
+                 <p className="text-sm text-gray-500">No active categories yet.</p>
+               ) : disciplineChecklist.map(item => (
                  <div key={item.name}>
                    <div className="flex justify-between text-sm font-bold text-gray-800 dark:text-gray-200 mb-2">
                      <span className="flex items-center gap-2">

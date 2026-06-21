@@ -34,6 +34,32 @@ Because our assignments are infinitely flexible, our completion UI must be too. 
 - **The Weekly Chart:** A beautiful, custom Tailwind-based Bar Chart showing their performance over the last 7 days (e.g., Monday: 100%, Tuesday: 80%).
 - **Recent Achievements (Placeholder):** A sneak-peek section for Badges (to be fully built in Phase 6).
 
+## Phase 6: Polish & Gamification (Making it Dynamic)
+
+This final phase brings the beautiful UI to life by wiring all static numbers to real database calculations.
+
+### 1. Dynamic Analytics Engine
+We will create a central utility or server actions to calculate:
+- **Current Streak:** Look back day-by-day in `student_progress` to see how many consecutive days the student has completed at least one task.
+- **Total Points:** Every completed task = 10 Knowledge Points.
+- **Discipline Checklist:** Group the student's progress by `assignments.category`. Calculate `(completed / total_assigned) * 100` to feed the exact percentages into the horizontal bars.
+- **Weekly Chart:** Fetch the last 7 days of `student_progress` and calculate the daily completion rate to drive the heights of the Bar Chart.
+
+### 2. Updating the UI Components
+- **[MODIFY]** `src/app/student/dashboard/page.tsx`
+  - Replace static streak and task counts with the live calculations.
+- **[MODIFY]** `src/app/student/analytics/page.tsx`
+  - Feed the dynamic weekly array into the Bar Chart.
+  - Render the Discipline Checklist from the dynamic category percentages.
+
+> [!IMPORTANT]
+> **Open Question for User regarding Prayers:** 
+> For the 5-Prayer block, do you want to keep the current setup (Teacher creates 5 separate checkbox assignments, which works perfectly right now), OR do you want me to write custom logic so the Teacher creates *one* assignment called "Daily Prayers", and the system automatically breaks it into 5 checkboxes on the student side?
+
+> [!WARNING]
+> **Open Question regarding Next Prayer Widget:**
+> Do you want me to integrate a free external API (like Aladhan.com) to get real prayer times based on the user's location, or keep it static for this MVP?
+
 ## Proposed GitHub Repository Names
 - `al-muallim` (Based on the title in the design mockup)
 - `tarbiyah-tracker`

@@ -19,7 +19,7 @@
   - Books
   - Class_Discussions (with Announcements)
   - Achievements (Badges)
-- [ ] Write API routes/Server Actions to interact with database.
+- [x] Write API routes/Server Actions to interact with database.
 - [ ] Setup Swagger/OpenAPI documentation for custom API routes.
 
 ## 4. UI Implementation (Teacher)
@@ -35,7 +35,9 @@
 - [x] Assignment Completion Flow (Marking Zikr/Prayers complete).
 - [x] Personal Performance Analytics View.
 
-## 6. Polish
+## 6. Polish & Gamification
+- [x] Build dynamic Dashboard logic (Streaks, Next Prayer, Categories).
+- [x] Build dynamic Analytics logic (Charts, Discipline Checklists).
 - [ ] Responsive design adjustments.
 - [ ] Loading states and error handling.
 - [ ] Final visual QA against designs.
