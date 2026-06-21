@@ -33,7 +33,7 @@
 - [x] Student Dashboard (Streak, Daily Focus).
 - [x] Join Class Flow.
 - [x] Assignment Completion Flow (Marking Zikr/Prayers complete).
-- [ ] Personal Performance Analytics View.
+- [x] Personal Performance Analytics View.
 
 ## 6. Polish
 - [ ] Responsive design adjustments.

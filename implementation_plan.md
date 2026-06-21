@@ -29,7 +29,10 @@ Because our assignments are infinitely flexible, our completion UI must be too. 
   - Saves the `quantity` to the database. If `quantity >= target`, it automatically marks `is_completed = true`.
 
 #### 4. Personal Analytics (`src/app/student/analytics/page.tsx`)
-- A visually rewarding page showing the student their completion rates over the week/month, helping them visualize their habit-building journey.
+- **Goal:** Give students a rewarding visualization of their hard work to encourage consistency.
+- **Key Metrics Row:** Display "Current Streak", "Total Completed Tasks", and "Average Completion Rate".
+- **The Weekly Chart:** A beautiful, custom Tailwind-based Bar Chart showing their performance over the last 7 days (e.g., Monday: 100%, Tuesday: 80%).
+- **Recent Achievements (Placeholder):** A sneak-peek section for Badges (to be fully built in Phase 6).
 
 ## Proposed GitHub Repository Names
 - `al-muallim` (Based on the title in the design mockup)
