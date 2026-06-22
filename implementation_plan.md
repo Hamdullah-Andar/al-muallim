@@ -60,6 +60,16 @@ We will create a central utility or server actions to calculate:
 > **Open Question regarding Next Prayer Widget:**
 > Do you want me to integrate a free external API (like Aladhan.com) to get real prayer times based on the user's location, or keep it static for this MVP?
 
+### 3. Final Polish & Responsive Design
+To wrap up the application, we will:
+- **Responsive Layouts:** Add Tailwind `md:` and `lg:` breakpoints to ensure the beautiful 3-column desktop layout gracefully stacks into a vertical layout on mobile devices.
+- **Loading States:** Create Next.js `loading.tsx` files for the dashboards. Instead of a blank screen while querying Supabase, the user will see beautiful, shimmering "Skeleton" versions of the UI.
+- **Error Boundaries:** Add `error.tsx` files to gracefully catch any API failures (e.g., if Aladhan API is down) without breaking the app.
+
+> [!IMPORTANT]
+> **Open Question for User regarding Final Polish:** 
+> Do you want me to proceed with implementing standard shimmering Skeleton Loaders for the loading states, and ensuring everything stacks cleanly on mobile? Or do you have specific loading animations/mobile designs in mind?
+
 ## Proposed GitHub Repository Names
 - `al-muallim` (Based on the title in the design mockup)
 - `tarbiyah-tracker`

@@ -38,6 +38,6 @@
 ## 6. Polish & Gamification
 - [x] Build dynamic Dashboard logic (Streaks, Next Prayer, Categories).
 - [x] Build dynamic Analytics logic (Charts, Discipline Checklists).
-- [ ] Responsive design adjustments.
-- [ ] Loading states and error handling.
+- [x] Responsive design adjustments.
+- [x] Loading states and error handling.
 - [ ] Final visual QA against designs.

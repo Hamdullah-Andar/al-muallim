@@ -72,9 +72,9 @@ export default async function StudentDashboard() {
     <div className="max-w-6xl mx-auto p-4 md:p-8 animate-in fade-in duration-500">
       
       {/* 1. Header with Greeting & Next Prayer Widget */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div>
-          <h1 className="text-3xl font-bold mb-2">Assalamu Alaikum, {profile?.full_name?.split(' ')[0] || 'Student'}</h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">Assalamu Alaikum, {profile?.full_name?.split(' ')[0] || 'Student'}</h1>
           <p className="opacity-70 text-sm">Your journey today is {completionPercentage}% complete. Keep going!</p>
         </div>
         
