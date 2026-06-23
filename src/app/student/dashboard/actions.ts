@@ -27,9 +27,37 @@ export async function toggleAssignmentProgress(assignmentId: string, isCompleted
 
   if (error) {
     console.error("Upsert Error:", error)
-    throw new Error("Failed to update progress")
+    throw new Error(`Failed to update progress: ${error.message} - ${error.details || ''}`)
   }
 
   // Refresh the student dashboard so the Progress Bar updates instantly
+  revalidatePath('/student/dashboard')
+}
+
+export async function incrementZikrProgress(assignmentId: string, newCount: number, isCompleted: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authorized")
+
+  const todayDate = new Date().toISOString().split('T')[0]
+
+  const { error } = await supabase
+    .from('student_progress')
+    .upsert(
+      {
+        student_id: user.id,
+        assignment_id: assignmentId,
+        tracking_date: todayDate,
+        is_completed: isCompleted,
+        completed_value: newCount
+      },
+      { onConflict: 'student_id, assignment_id, tracking_date' }
+    )
+
+  if (error) {
+    console.error("Zikr Upsert Error:", error)
+    throw new Error(`Failed to update zikr progress: ${error.message} - ${error.details || ''}`)
+  }
+
   revalidatePath('/student/dashboard')
 }

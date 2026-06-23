@@ -41,3 +41,11 @@
 - [x] Responsive design adjustments.
 - [x] Loading states and error handling.
 - [ ] Final visual QA against designs.
+
+## 7. Dashboard Redesign & Multi-Zikr Tracking
+- [x] Build global Left Sidebar layout (`src/app/student/layout.tsx`).
+- [x] Build Top Stats Row (Streak and Overall Completion cards).
+- [x] Build `ZikrTrackerRow.tsx` and implement Left Column (Spiritual Rituals).
+- [x] Build `AcademicTaskCard.tsx` and implement Right Column (Academic & Self-Improvement).
+- [x] Build `MankiratTracker.tsx` for tracking negative habits.
+- [x] Redesign Joined Classes cards with images.

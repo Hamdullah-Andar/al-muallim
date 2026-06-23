@@ -191,5 +191,38 @@ To show analytics for teachers (how students are performing) and for students (t
 > [!IMPORTANT]
 > Please review the proposed architecture, tech stack, and ER diagram. Let me know:
 > 1. Which repository name you would like to use so I can initialize the project.
-> 2. Do you prefer using **Supabase** (all-in-one Postgres DB + Auth) or a custom Node.js backend with something like MongoDB or Firebase?
-> 3. Does the ER diagram capture all the dynamic assignment types you envisioned?
+## Phase 7: Student Dashboard Redesign & Multi-Zikr Tracking
+
+Your new design is absolutely stunning! It completely solves the "Multiple Zikr" problem by introducing sleek, stackable tracker rows instead of the massive blocky cards. It also upgrades the app to a professional, modern Sidebar layout!
+
+Here is the plan to implement this exact design:
+
+### 1. Global Layout Redesign (`src/app/student/layout.tsx`)
+We will shift the application structure:
+- **Remove Top Navigation**: Move the links (Dashboard, Joined Classes, Assignments, Analytics, Library, Support, Sign Out) to a fixed **Left Sidebar**.
+- **Top Header Area**: Build the new clean header containing the Date, Notification Bell, Settings Icon, and User Profile.
+
+### 2. Top Stats Row (`src/app/student/dashboard/page.tsx`)
+- Build the two wide aesthetic cards for **Daily Streak** (with the "+2 today" indicator) and **Overall Completion** (with the horizontal progress bar).
+
+### 3. Left Column (Spiritual Rituals)
+To ensure the layout perfectly balances your master list of assignments, the left side of the screen will contain:
+- **Daily Zikr Tracking**: Counters for Astaghfirullah, La ilaha illallah, etc.
+- **Daily Prayers**: 5 daily prayers (marked only if prayed with Jamat).
+- **Nawafil**: Cards for Maghrib Nafl, Before Witr, Duha, and Ishraq.
+
+### 4. Right Column (Academic & Self-Improvement)
+The right side of the screen will hold the remaining disciplines:
+- **Tilawat, Hadith, & Tarjoma**: Individual cards for Quran recitation and reading.
+- **Avoid Mankirat (The 5 Senses)**: Interactive trackers allowing the student to mark their percentage of avoiding bad actions with their Mouth, Nose, Eye, Ear, and Touch.
+- **Sport**: A daily checkbox for physical activity.
+
+### 5. Joined Classes Redesign
+Update the Class Cards at the bottom of the dashboard:
+- Integrate placeholder stock images of Islamic books/patterns (since we don't have user-uploaded covers yet).
+- Add the Level badges ("Intermediate", "Foundational").
+- Build the beautiful dotted "Browse More Classes" placeholder card.
+
+> [!IMPORTANT]
+> **User Review Required:**
+> I have completely adapted to your brilliant new design. Are you ready for me to begin executing this massive UI overhaul? If so, simply reply "Yes" and I will start coding!
