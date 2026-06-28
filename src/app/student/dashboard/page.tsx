@@ -5,6 +5,7 @@ import AssignmentCard from '@/components/student/AssignmentCard'
 import ZikrTrackerRow from '@/components/ui/ZikrTrackerRow'
 import AcademicTaskCard from '@/components/ui/AcademicTaskCard'
 import MankiratTracker from '@/components/ui/MankiratTracker'
+import DailyPrayersCard from '@/components/ui/DailyPrayersCard'
 import { calculateStudentStats } from '@/utils/gamification'
 import { getNextPrayer } from '@/utils/prayerTimes'
 
@@ -64,9 +65,12 @@ export default async function StudentDashboard() {
   
   const categories = Object.keys(groupedAssignments).sort()
 
-  const leftColumnCategories = ['zikr', 'prayer', 'nawafil']
+  const leftColumnCategories = ['zikr', 'nawafil'] // Prayer removed, handled separately
   const leftAssignments = assignments.filter(a => leftColumnCategories.includes(a.category?.toLowerCase() || ''))
-  const rightAssignments = assignments.filter(a => !leftColumnCategories.includes(a.category?.toLowerCase() || ''))
+  const rightAssignments = assignments.filter(a => !leftColumnCategories.includes(a.category?.toLowerCase() || '') && a.category?.toLowerCase() !== 'prayer')
+
+  const prayerAssignment = assignments.find(a => a.category?.toLowerCase() === 'prayer')
+  const prayerProgress = prayerAssignment ? progress?.find(p => p.assignment_id === prayerAssignment.id) : null
 
   // Calculate high-level progress stats for TODAY
   const totalTasks = assignments.length
@@ -112,7 +116,7 @@ export default async function StudentDashboard() {
       {/* 2. Top Stats Row (Streak & Overall Completion) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         {/* Streak Card */}
-        <div className="bg-white dark:bg-black/40 p-6 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-black/40 p-6 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-between border-l-8 border-l-[#0a6c4c]">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full bg-[#bdf3df] flex items-center justify-center text-primary-800">
                <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13.07 4.8 13.56 2.84C13.65 2.5 13.31 2.19 13.01 2.36C12.19 2.84 11.45 3.48 10.84 4.2C8.75 6.64 8.04 9.94 8.72 13C8.77 13.25 8.44 13.43 8.24 13.26C7.54 12.65 7.04 11.85 6.77 10.96C6.68 10.65 6.22 10.64 6.09 10.93C5.1 13.24 5.37 16.03 6.94 18.06C8.21 19.7 10.02 20.72 12.03 20.93C15.11 21.25 18.23 19.52 19.5 16.66C20.31 14.86 19.56 12.65 17.66 11.2V11.2Z" /></svg>
@@ -128,7 +132,7 @@ export default async function StudentDashboard() {
         </div>
 
         {/* Overall Completion Card */}
-        <div className="bg-white dark:bg-black/40 p-6 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-between">
+        <div className="bg-white dark:bg-black/40 p-6 rounded-[24px] border border-black/5 dark:border-white/5 shadow-sm flex items-center justify-between border-l-8 border-l-[#0a6c4c]">
            <div className="flex items-center gap-4">
              <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
                <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
@@ -138,14 +142,25 @@ export default async function StudentDashboard() {
                <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{completionPercentage}%</h3>
              </div>
            </div>
-           <div className="w-32 hidden sm:block">
-              {/* Thick dark green progress bar matching design */}
-              <div className="h-3 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                <div className="h-full bg-[#0a6c4c] rounded-full transition-all duration-1000" style={{ width: `${completionPercentage}%` }}></div>
-              </div>
+           
+           {/* Custom Pill Progress Bar matching the screenshot */}
+           <div className="w-32 sm:w-48 h-3 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+             <div 
+               className="h-full bg-[#0a6c4c] rounded-full transition-all duration-1000 ease-out" 
+               style={{ width: `${completionPercentage}%` }}
+             ></div>
            </div>
         </div>
       </div>
+
+      {/* 2.5 Daily Prayers Full Width Card */}
+      {prayerAssignment && (
+         <DailyPrayersCard 
+           assignment={prayerAssignment} 
+           initialProgress={prayerProgress} 
+           nextPrayer={nextPrayer} 
+         />
+      )}
 
       {/* 3. The Two Columns (Spiritual Rituals vs Academic) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">

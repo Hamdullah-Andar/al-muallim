@@ -12,8 +12,6 @@ export default function AcademicTaskCard({ assignment, initialProgress }: Academ
   const [isCompleted, setIsCompleted] = useState(initialProgress?.is_completed || false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // In the future, this priority could come from the assignment JSONB metadata
-  const isHighPriority = assignment.category === 'QURAN' || assignment.category === 'TARJOMA'
 
   const handleMarkDone = async () => {
     if (isCompleted || isSubmitting) return
@@ -47,17 +45,6 @@ export default function AcademicTaskCard({ assignment, initialProgress }: Academ
           <h3 className={`font-bold ${isCompleted ? 'text-primary-800 dark:text-primary-300' : 'text-gray-900 dark:text-white'}`}>
             {assignment.title}
           </h3>
-          
-          {/* Priority Badge */}
-          {isHighPriority ? (
-            <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              High Priority
-            </span>
-          ) : (
-             <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              Medium Priority
-            </span>
-          )}
         </div>
         
         {/* Due indicator */}

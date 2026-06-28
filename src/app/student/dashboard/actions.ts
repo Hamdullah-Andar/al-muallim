@@ -61,3 +61,28 @@ export async function incrementZikrProgress(assignmentId: string, newCount: numb
 
   revalidatePath('/student/dashboard')
 }
+
+export async function togglePrayerMask(assignmentId: string, maskValue: number) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authorized")
+
+  const todayDate = new Date().toISOString().split('T')[0]
+
+  const { error } = await supabase
+    .from('student_progress')
+    .upsert(
+      {
+        student_id: user.id,
+        assignment_id: assignmentId,
+        tracking_date: todayDate,
+        is_completed: maskValue === 31, // 31 means all 5 prayers checked (1+2+4+8+16)
+        completed_value: maskValue
+      },
+      { onConflict: 'student_id, assignment_id, tracking_date' }
+    )
+
+  if (error) throw new Error("Failed to update prayer progress")
+
+  revalidatePath('/student/dashboard')
+}
