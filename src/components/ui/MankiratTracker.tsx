@@ -1,23 +1,44 @@
 'use client'
 
 import { useState } from 'react'
+import { updateMankiratProgress } from '@/app/student/dashboard/actions'
 
-export default function MankiratTracker() {
-  // Purely visual state for demonstration purposes
+interface MankiratTrackerProps {
+  assignment: any;
+  initialProgress: any;
+}
+
+export default function MankiratTracker({ assignment, initialProgress }: MankiratTrackerProps) {
+  const savedData = initialProgress?.progress_data || {}
+
   const [senses, setSenses] = useState([
-    { name: 'Mouth', percentage: 40, icon: '👄' },
-    { name: 'Nose', percentage: 20, icon: '👃' },
-    { name: 'Eye', percentage: 65, icon: '👁️' },
-    { name: 'Ear', percentage: 30, icon: '👂' },
-    { name: 'Touch', percentage: 15, icon: '✋' }
+    { name: 'Mouth', percentage: savedData.Mouth ?? 100, icon: '👄' },
+    { name: 'Nose', percentage: savedData.Nose ?? 100, icon: '👃' },
+    { name: 'Eye', percentage: savedData.Eye ?? 100, icon: '👁️' },
+    { name: 'Ear', percentage: savedData.Ear ?? 100, icon: '👂' },
+    { name: 'Touch', percentage: savedData.Touch ?? 100, icon: '✋' }
   ])
 
-  const decreasePercentage = (index: number) => {
-    setSenses(prev => {
-      const newSenses = [...prev]
-      newSenses[index].percentage = Math.max(0, newSenses[index].percentage - 5)
-      return newSenses
-    })
+  const decreasePercentage = async (index: number) => {
+    // Optimistic Update
+    const newSenses = [...senses]
+    newSenses[index].percentage = Math.max(0, newSenses[index].percentage - 5)
+    setSenses(newSenses)
+
+    // Construct Payload
+    const payload = {
+      Mouth: newSenses[0].percentage,
+      Nose: newSenses[1].percentage,
+      Eye: newSenses[2].percentage,
+      Ear: newSenses[3].percentage,
+      Touch: newSenses[4].percentage
+    }
+
+    try {
+      await updateMankiratProgress(assignment.id, payload)
+    } catch (e) {
+      console.error("Failed to update munkarat", e)
+    }
   }
 
   return (

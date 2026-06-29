@@ -159,6 +159,10 @@ CREATE TABLE public.student_progress (
   
   -- How many Zikrs or Pages have they completed so far today?
   completed_value integer DEFAULT 0, 
+  
+  -- Used for complex tracking like the 5 senses of Munkarat
+  progress_data jsonb DEFAULT '{}'::jsonb,
+  
   -- Is the task 100% finished for the day?
   is_completed boolean DEFAULT false NOT NULL,
   

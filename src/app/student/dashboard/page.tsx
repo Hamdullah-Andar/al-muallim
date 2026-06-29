@@ -67,10 +67,13 @@ export default async function StudentDashboard() {
 
   const leftColumnCategories = ['zikr', 'nawafil'] // Prayer removed, handled separately
   const leftAssignments = assignments.filter(a => leftColumnCategories.includes(a.category?.toLowerCase() || ''))
-  const rightAssignments = assignments.filter(a => !leftColumnCategories.includes(a.category?.toLowerCase() || '') && a.category?.toLowerCase() !== 'prayer')
+  const rightAssignments = assignments.filter(a => !leftColumnCategories.includes(a.category?.toLowerCase() || '') && a.category?.toLowerCase() !== 'prayer' && a.category?.toLowerCase() !== 'munkarat')
 
   const prayerAssignment = assignments.find(a => a.category?.toLowerCase() === 'prayer')
   const prayerProgress = prayerAssignment ? progress?.find(p => p.assignment_id === prayerAssignment.id) : null
+
+  const munkaratAssignment = assignments.find(a => a.category?.toLowerCase() === 'munkarat')
+  const munkaratProgress = munkaratAssignment ? progress?.find(p => p.assignment_id === munkaratAssignment.id) : null
 
   // Calculate high-level progress stats for TODAY
   const totalTasks = assignments.length
@@ -195,14 +198,19 @@ export default async function StudentDashboard() {
              <span className="text-xs font-bold text-primary-600 cursor-pointer">View All</span>
            </div>
            
-           {rightAssignments.length === 0 ? (
+           {rightAssignments.length === 0 && !munkaratAssignment ? (
              <div className="bg-white dark:bg-black/40 p-8 rounded-3xl text-center border border-dashed border-black/10 dark:border-white/10">
                <p className="text-gray-500 text-sm">No academic tasks assigned for today.</p>
              </div>
            ) : (
              <div className="space-y-4">
                 {/* Your Custom Mankirat Tracker! */}
-                <MankiratTracker />
+                {munkaratAssignment && (
+                   <MankiratTracker 
+                     assignment={munkaratAssignment} 
+                     initialProgress={munkaratProgress} 
+                   />
+                )}
 
                 {rightAssignments.map(assignment => (
                    <AcademicTaskCard key={assignment.id} assignment={assignment} initialProgress={progressMap[assignment.id]} />

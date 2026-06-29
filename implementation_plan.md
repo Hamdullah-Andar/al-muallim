@@ -223,6 +223,9 @@ Update the Class Cards at the bottom of the dashboard:
 - Add the Level badges ("Intermediate", "Foundational").
 - Build the beautiful dotted "Browse More Classes" placeholder card.
 
-> [!IMPORTANT]
-> **User Review Required:**
-> I have completely adapted to your brilliant new design. Are you ready for me to begin executing this massive UI overhaul? If so, simply reply "Yes" and I will start coding!
+### 6. Specialized Teacher UI Automation
+Because the Student UI relies on specialized, hard-coded widgets for Munkarat and Prayer, the Teacher Dashboard will be automated:
+- When a teacher creates a "Munkarat" assignment, the title will automatically lock to "Avoid five sense Munkarat".
+- When a teacher creates a "Prayer" assignment, the title will automatically lock to "Five time Jamat prayer".
+- The tracking configurations (checkbox vs target) will be hidden from the teacher to guarantee the database receives the correct format that the Student widgets expect.
+- The `student_progress` database table has been upgraded with a `progress_data JSONB` column to securely hold complex multi-value data (like the 5 independent percentages for Munkarat).

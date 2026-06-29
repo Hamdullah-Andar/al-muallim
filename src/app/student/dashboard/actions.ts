@@ -86,3 +86,34 @@ export async function togglePrayerMask(assignmentId: string, maskValue: number) 
 
   revalidatePath('/student/dashboard')
 }
+
+export async function updateMankiratProgress(assignmentId: string, sensesData: any) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authorized")
+
+  const todayDate = new Date().toISOString().split('T')[0]
+
+  // We check if it is 100% completed by checking if all percentages are 0
+  const isCompleted = Object.values(sensesData).every((val) => val === 0)
+
+  const { error } = await supabase
+    .from('student_progress')
+    .upsert(
+      {
+        student_id: user.id,
+        assignment_id: assignmentId,
+        tracking_date: todayDate,
+        is_completed: isCompleted,
+        progress_data: sensesData
+      },
+      { onConflict: 'student_id, assignment_id, tracking_date' }
+    )
+
+  if (error) {
+    console.error("Munkarat Upsert Error:", error)
+    throw new Error(`Failed to update munkarat progress: ${error.message} - ${error.details || ''}`)
+  }
+
+  revalidatePath('/student/dashboard')
+}

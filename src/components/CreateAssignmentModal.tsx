@@ -26,6 +26,11 @@ export default function CreateAssignmentModal({
     const formData = new FormData(e.currentTarget)
     formData.append('classId', classId)
     
+    // If the tracking type radios are hidden, we must append the state value manually!
+    if (category === 'Munkarat' || category === 'Prayer') {
+      formData.set('trackingType', trackingType)
+    }
+
     // If they selected Custom, use their typed-in category name
     if (category === 'Custom') {
       formData.set('category', customCategory)
@@ -110,40 +115,54 @@ export default function CreateAssignmentModal({
           {/* Step 2: Task Title */}
           <div>
             <label className="block text-sm font-bold mb-2 opacity-80">Task Title</label>
-            <input 
-              type="text" 
-              name="title"
-              required
-              placeholder={
-                category === 'Zikr' ? "e.g., Astaghfirullah" : 
-                category === 'Reading' ? "e.g., Recitation (Surah Yaseen)" : 
-                "What exactly should they do?"
-              }
-              className="w-full px-4 py-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-black focus:ring-2 focus:ring-primary-500 outline-none transition-all"
-            />
+            {(category === 'Munkarat' || category === 'Prayer') ? (
+              <input 
+                key="readonly-title"
+                type="text" 
+                name="title"
+                readOnly
+                value={category === 'Munkarat' ? "Avoid five sense Munkarat" : "Five time Jamat prayer"}
+                className="w-full px-4 py-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 opacity-70 cursor-not-allowed outline-none font-bold"
+              />
+            ) : (
+              <input 
+                key="editable-title"
+                type="text" 
+                name="title"
+                required
+                placeholder={
+                  category === 'Zikr' ? "e.g., Astaghfirullah" : 
+                  category === 'Reading' ? "e.g., Recitation (Surah Yaseen)" : 
+                  "What exactly should they do?"
+                }
+                className="w-full px-4 py-3 rounded-xl border border-black/10 dark:border-white/10 bg-white dark:bg-black focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+              />
+            )}
           </div>
 
           {/* Step 3: Tracking Type Selector */}
-          <div>
-            <label className="block text-sm font-bold mb-3 opacity-80">How is this tracked?</label>
-            <div className="grid grid-cols-2 gap-4">
-              <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center text-center transition-all ${trackingType === 'counter' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
-                <input type="radio" name="trackingType" value="counter" checked={trackingType === 'counter'} onChange={() => setTrackingType('counter')} className="hidden" />
-                <span className="text-2xl mb-2">🔢</span>
-                <span className="font-bold text-sm">Target Number</span>
-                <span className="text-xs opacity-60 mt-1">Has a specific count</span>
-              </label>
-              <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center text-center transition-all ${trackingType === 'checkbox' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
-                <input type="radio" name="trackingType" value="checkbox" checked={trackingType === 'checkbox'} onChange={() => setTrackingType('checkbox')} className="hidden" />
-                <span className="text-2xl mb-2">✅</span>
-                <span className="font-bold text-sm">Done / Not Done</span>
-                <span className="text-xs opacity-60 mt-1">Simple checkbox</span>
-              </label>
+          {category !== 'Munkarat' && category !== 'Prayer' && (
+            <div>
+              <label className="block text-sm font-bold mb-3 opacity-80">How is this tracked?</label>
+              <div className="grid grid-cols-2 gap-4">
+                <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center text-center transition-all ${trackingType === 'counter' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
+                  <input type="radio" name="trackingType" value="counter" checked={trackingType === 'counter'} onChange={() => setTrackingType('counter')} className="hidden" />
+                  <span className="text-2xl mb-2">🔢</span>
+                  <span className="font-bold text-sm">Target Number</span>
+                  <span className="text-xs opacity-60 mt-1">Has a specific count</span>
+                </label>
+                <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center text-center transition-all ${trackingType === 'checkbox' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
+                  <input type="radio" name="trackingType" value="checkbox" checked={trackingType === 'checkbox'} onChange={() => setTrackingType('checkbox')} className="hidden" />
+                  <span className="text-2xl mb-2">✅</span>
+                  <span className="font-bold text-sm">Done / Not Done</span>
+                  <span className="text-xs opacity-60 mt-1">Simple checkbox</span>
+                </label>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Step 4: Dynamic Fields (Only shows if Counter is selected!) */}
-          {trackingType === 'counter' && (
+          {trackingType === 'counter' && category !== 'Munkarat' && category !== 'Prayer' && (
             <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2">
               <div>
                 <label className="block text-sm font-bold mb-2 opacity-80">Target Count</label>

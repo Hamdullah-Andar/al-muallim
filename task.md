@@ -46,6 +46,8 @@
 - [x] Build global Left Sidebar layout (`src/app/student/layout.tsx`).
 - [x] Build Top Stats Row (Streak and Overall Completion cards).
 - [x] Build `ZikrTrackerRow.tsx` and implement Left Column (Spiritual Rituals).
-- [x] Build `AcademicTaskCard.tsx` and implement Right Column (Academic & Self-Improvement).
-- [x] Build `MankiratTracker.tsx` for tracking negative habits.
-- [x] Redesign Joined Classes cards with images.
+- `[x]` Build `AcademicTaskCard.tsx` and implement Right Column (Academic & Self-Improvement).
+- `[x]` Build `MankiratTracker.tsx` for tracking negative habits (5 senses) via JSONB.
+- `[x]` Build `DailyPrayersCard.tsx` with dynamic lock/unlock syncing to live Aladhan API.
+- `[x]` Automate Teacher Dashboard to lock titles and tracking types for Munkarat and Prayer assignments.
+- `[x]` Redesign Joined Classes cards with images.
