@@ -30,7 +30,7 @@ export default function AnalyticsDashboardClient({
   const [showPrayerModal, setShowPrayerModal] = useState(false)
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500 font-sans">
+    <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500 font-sans w-full min-w-0 overflow-x-hidden">
       
       {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
@@ -58,9 +58,9 @@ export default function AnalyticsDashboardClient({
       </div>
 
       {/* Top Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 w-full min-w-0">
         {/* Current Streak */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex items-center gap-5">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex items-center gap-5 min-w-0 w-full overflow-hidden">
           <div className="w-14 h-14 rounded-2xl bg-[#DCF6EB] flex items-center justify-center flex-shrink-0">
             <svg className="w-7 h-7 text-[#0a6c4c]" fill="currentColor" viewBox="0 0 24 24"><path d="M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13.07 4.8 13.56 2.84C13.65 2.5 13.31 2.19 13.01 2.36C12.19 2.84 11.45 3.48 10.84 4.2C8.75 6.64 8.04 9.94 8.72 13C8.77 13.25 8.44 13.43 8.24 13.26C7.54 12.65 7.04 11.85 6.77 10.96C6.68 10.65 6.22 10.64 6.09 10.93C5.1 13.24 5.37 16.03 6.94 18.06C8.21 19.7 10.02 20.72 12.03 20.93C15.11 21.25 18.23 19.52 19.5 16.66C20.31 14.86 19.56 12.65 17.66 11.2V11.2Z" /></svg>
           </div>
@@ -72,7 +72,7 @@ export default function AnalyticsDashboardClient({
         </div>
 
         {/* Overall Completion */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex items-center gap-5">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex items-center gap-5 min-w-0 w-full overflow-hidden">
           <div className="w-14 h-14 rounded-2xl bg-[#E8F0F8] flex items-center justify-center flex-shrink-0">
             <svg className="w-7 h-7 text-[#21618C]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
           </div>
@@ -97,7 +97,7 @@ export default function AnalyticsDashboardClient({
           const xpPercentage = Math.min(100, Math.round((xp / nextTarget) * 100));
 
           return (
-            <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex flex-col justify-center">
+            <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex flex-col justify-center min-w-0 w-full overflow-hidden">
               <div className="flex justify-between items-end mb-4">
                 <p className="text-xs font-bold text-gray-500">Next Milestone</p>
                 <h3 className="text-xl font-extrabold text-[#092B2B] dark:text-white">{xp} XP</h3>
@@ -113,8 +113,8 @@ export default function AnalyticsDashboardClient({
       </div>
 
       {/* Consistency Matrix */}
-      <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-8 shadow-sm border border-gray-100 dark:border-gray-800/60 mb-8 overflow-hidden">
-        <div className="flex justify-between items-center mb-8">
+      <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-4 sm:p-8 shadow-sm border border-gray-100 dark:border-gray-800/60 mb-8 min-w-0 w-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sm:mb-8">
           <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
             Consistency Matrix
@@ -131,8 +131,8 @@ export default function AnalyticsDashboardClient({
         </div>
 
         {/* GitHub style calendar (Mocked visually for MVP) */}
-        <div className="flex gap-4">
-          <div className="flex flex-col gap-[7px] text-[10px] text-gray-400 font-bold mt-[20px]">
+        <div className="flex gap-2 sm:gap-4 w-full min-w-0">
+          <div className="flex flex-col gap-[7px] text-[10px] text-gray-400 font-bold mt-[20px] flex-shrink-0">
             <span className="h-[14px] flex items-center">Mon</span>
             <span className="h-[14px] flex items-center">Tue</span>
             <span className="h-[14px] flex items-center">Wed</span>
@@ -141,7 +141,7 @@ export default function AnalyticsDashboardClient({
             <span className="h-[14px] flex items-center">Sat</span>
             <span className="h-[14px] flex items-center">Sun</span>
           </div>
-          <div className="flex-1 overflow-x-auto pb-4">
+          <div className="flex-1 min-w-0 overflow-x-auto pb-4">
             <div className="flex gap-2 min-w-max">
               {Array.from({ length: 45 }).map((_, weekIdx) => {
                 // Determine if a new month starts in this week column
@@ -191,10 +191,10 @@ export default function AnalyticsDashboardClient({
       </div>
 
       {/* Prayers and Zikr Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 w-full min-w-0">
         
         {/* Weekly Prayers */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-8 shadow-sm border border-gray-100 dark:border-gray-800/60 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 sm:p-8 shadow-sm border border-gray-100 dark:border-gray-800/60 flex flex-col sm:flex-row items-center justify-between gap-6 sm:gap-8 min-w-0 w-full overflow-hidden">
           <div className="relative w-36 h-36 flex items-center justify-center">
              {/* Background Circle */}
              <svg className="w-full h-full transform -rotate-90">
@@ -237,7 +237,7 @@ export default function AnalyticsDashboardClient({
         </div>
 
         {/* Zikr Performance */}
-        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-8 shadow-sm border border-gray-100 dark:border-gray-800/60">
+        <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 sm:p-8 shadow-sm border border-gray-100 dark:border-gray-800/60 min-w-0 w-full overflow-hidden">
           <h3 className="text-sm font-bold text-gray-500 mb-8">Zikr Performance</h3>
           
           <div className="space-y-6">
@@ -264,8 +264,8 @@ export default function AnalyticsDashboardClient({
       </div>
 
       {/* Academic Progress Area Chart */}
-      <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-8 shadow-sm border border-gray-100 dark:border-gray-800/60 mb-8">
-        <div className="flex justify-between items-start mb-8">
+      <div className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 sm:p-8 shadow-sm border border-gray-100 dark:border-gray-800/60 mb-8 min-w-0 w-full overflow-hidden">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6 sm:mb-8">
           <div>
             <h3 className="font-bold text-gray-900 dark:text-white mb-1">Academic Progress</h3>
             <p className="text-xs text-gray-500">Weekly study hours & performance</p>
@@ -326,11 +326,11 @@ export default function AnalyticsDashboardClient({
       </div>
 
       {/* Bottom Spiritual Pillars Cards */}
-      <div className="mb-4">
+      <div className="mb-4 w-full min-w-0">
         <h3 className="font-bold text-gray-900 dark:text-white mb-4">Core Spiritual Pillars</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full min-w-0">
           {displaySubjects.map((subject, i) => (
-            <div key={i} className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex flex-col items-center text-center hover:shadow-md transition-all duration-300 group">
+            <div key={i} className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex flex-col items-center text-center hover:shadow-md transition-all duration-300 group min-w-0 w-full overflow-hidden">
               <div className="w-14 h-14 rounded-2xl bg-[#F4F7F7] dark:bg-gray-800 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
                 {subject.icon}
               </div>
@@ -344,20 +344,20 @@ export default function AnalyticsDashboardClient({
 
       {/* Custom & Additional Assignments Breakdown */}
       {customAssignments && customAssignments.length > 0 && (
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
+        <div className="mb-8 w-full min-w-0">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
             <div>
               <h3 className="font-bold text-gray-900 dark:text-white">Additional & Custom Assignments</h3>
               <p className="text-xs text-gray-500">Weekly consistency for Nawafils, readings, and daily habits</p>
             </div>
-            <span className="text-xs font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full flex-shrink-0">
               {customAssignments.length} Active {customAssignments.length === 1 ? 'Habit' : 'Habits'}
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full min-w-0">
             {customAssignments.map((item, idx) => (
-              <div key={idx} className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex items-center justify-between hover:shadow-md transition-all duration-300 group">
+              <div key={idx} className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex items-center justify-between hover:shadow-md transition-all duration-300 group min-w-0 w-full overflow-hidden">
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-12 h-12 rounded-2xl bg-[#F4F7F7] dark:bg-gray-800 flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
                     {item.icon}

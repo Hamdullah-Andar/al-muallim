@@ -81,7 +81,7 @@ export default async function StudentLayout({
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-h-screen overflow-y-auto relative">
+      <main className="flex-1 flex flex-col min-h-screen min-w-0 overflow-y-auto overflow-x-hidden relative">
         {/* Mobile Header (Shown only on small screens) */}
         <header className="lg:hidden h-16 border-b border-black/5 bg-white flex items-center px-4 justify-between sticky top-0 z-20">
           <h1 className="font-bold text-primary-800">Al-Mu'allim</h1>
