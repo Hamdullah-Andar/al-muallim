@@ -30,8 +30,9 @@ export async function toggleAssignmentProgress(assignmentId: string, isCompleted
     throw new Error(`Failed to update progress: ${error.message} - ${error.details || ''}`)
   }
 
-  // Refresh the student dashboard so the Progress Bar updates instantly
+  // Refresh both student dashboard and analytics so data is always synced in real-time
   revalidatePath('/student/dashboard')
+  revalidatePath('/student/analytics')
 }
 
 export async function incrementZikrProgress(assignmentId: string, newCount: number, isCompleted: boolean) {
@@ -60,6 +61,7 @@ export async function incrementZikrProgress(assignmentId: string, newCount: numb
   }
 
   revalidatePath('/student/dashboard')
+  revalidatePath('/student/analytics')
 }
 
 export async function togglePrayerMask(assignmentId: string, maskValue: number) {
@@ -85,6 +87,7 @@ export async function togglePrayerMask(assignmentId: string, maskValue: number) 
   if (error) throw new Error("Failed to update prayer progress")
 
   revalidatePath('/student/dashboard')
+  revalidatePath('/student/analytics')
 }
 
 export async function updateMankiratProgress(assignmentId: string, sensesData: any) {
@@ -116,4 +119,5 @@ export async function updateMankiratProgress(assignmentId: string, sensesData: a
   }
 
   revalidatePath('/student/dashboard')
+  revalidatePath('/student/analytics')
 }
