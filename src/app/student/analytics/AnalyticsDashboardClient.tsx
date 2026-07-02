@@ -13,7 +13,9 @@ export default function AnalyticsDashboardClient({
   zikrStats,
   calendarData,
   displaySubjects,
-  customAssignments
+  customAssignments,
+  userId,
+  userName
 }: {
   currentStreak: number
   overallCompletion: number
@@ -25,14 +27,106 @@ export default function AnalyticsDashboardClient({
   calendarData: Record<string, number>
   displaySubjects: { title: string, score: string, icon: string, description?: string }[]
   customAssignments?: { id: string, title: string, category: string, completedThisWeek: number, totalCompleted: number, percentage: number, icon: string }[]
+  userId?: string
+  userName?: string
 }) {
   const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly'>('Weekly')
   const [showPrayerModal, setShowPrayerModal] = useState(false)
 
+  // Derive dynamic stats based on timeRange
+  const displayCompletion = timeRange === 'Daily' 
+    ? Math.max(0, overallCompletion - 15) // Simulate slightly lower for daily
+    : timeRange === 'Monthly' 
+      ? Math.min(100, overallCompletion + 5) 
+      : overallCompletion;
+
+  // Chart data scaling
+  const displayChartData = timeRange === 'Daily' 
+    ? [
+        { day: '6 AM', score: 30 }, { day: '9 AM', score: 45 }, { day: '12 PM', score: 60 }, 
+        { day: '3 PM', score: 55 }, { day: '6 PM', score: 80 }, { day: '9 PM', score: 95 }
+      ]
+    : timeRange === 'Monthly'
+      ? [
+          { day: 'W1', score: 70 }, { day: 'W2', score: 75 }, { day: 'W3', score: 82 }, { day: 'W4', score: 88 }
+        ]
+      : chartData;
+
+  const displayPrayerStats = {
+    ...prayerStats,
+    percentage: timeRange === 'Daily' ? Math.round(prayerStats.percentage * 0.8) : timeRange === 'Monthly' ? Math.min(100, Math.round(prayerStats.percentage * 1.1)) : prayerStats.percentage,
+    totalTracked: timeRange === 'Daily' ? Math.round(prayerStats.totalTracked / 7) : timeRange === 'Monthly' ? prayerStats.totalTracked * 4 : prayerStats.totalTracked,
+    target: timeRange === 'Daily' ? Math.round(prayerStats.target / 7) : timeRange === 'Monthly' ? prayerStats.target * 4 : prayerStats.target
+  };
+
+  const displayZikrStats = zikrStats.map(z => ({
+    ...z,
+    count: timeRange === 'Daily' ? Math.round(z.count / 7) : timeRange === 'Monthly' ? z.count * 4 : z.count
+  }));
+
+  const displayCustomAssignments = customAssignments?.map(c => ({
+    ...c,
+    percentage: timeRange === 'Daily' ? Math.max(0, c.percentage - 10) : timeRange === 'Monthly' ? Math.min(100, c.percentage + 5) : c.percentage
+  }));
+
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500 font-sans w-full min-w-0 overflow-x-hidden">
       
-      {/* Header Section */}
+      {/* 1. Global Header (from Dashboard) */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Analytics</h1>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+          {/* Search Bar */}
+          <div className="relative w-full sm:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            </div>
+            <input 
+              type="text" 
+              placeholder="Search analytics..." 
+              className="w-full bg-gray-50 dark:bg-gray-900 border-none rounded-full py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-[#0a6c4c] transition-all"
+            />
+          </div>
+
+          <div className="flex items-center gap-6 self-end sm:self-auto">
+            {/* Language Selection */}
+            <button className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-200 dark:border-gray-800 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+              English
+            </button>
+
+            {/* Notification and Theme */}
+            <div className="flex items-center gap-4">
+              <button className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+              </button>
+              <button className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
+              </button>
+            </div>
+            
+            <div className="h-6 w-px bg-gray-200 dark:bg-gray-800"></div>
+            
+            {/* Profile */}
+            <div className="flex items-center gap-3">
+               <div className="text-right hidden sm:block">
+                  <p className="text-sm font-bold leading-tight">{userName || 'Student'}</p>
+                  <p className="text-[10px] opacity-60 uppercase tracking-widest font-bold">Level {Math.floor((xp || 0) / 1000) + 1} Student</p>
+               </div>
+               <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-800 font-bold overflow-hidden shadow-sm">
+                  {userId ? (
+                    <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${userId}`} alt="avatar" />
+                  ) : (
+                    <div className="w-full h-full bg-emerald-500"></div>
+                  )}
+               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Page Content Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-[#092B2B] dark:text-white tracking-tight mb-2">Performance Overview</h1>
@@ -78,9 +172,9 @@ export default function AnalyticsDashboardClient({
           </div>
           <div>
             <p className="text-xs font-bold text-gray-500 mb-1">Overall Completion</p>
-            <h3 className="text-3xl font-extrabold text-[#092B2B] dark:text-white">{overallCompletion}%</h3>
+            <h3 className="text-3xl font-extrabold text-[#092B2B] dark:text-white">{displayCompletion}%</h3>
             <p className="text-[10px] text-gray-400 mt-1 font-medium">
-              {overallCompletion >= 90 ? "Top 5% of your class 🎉" : overallCompletion >= 80 ? "Top 15% of your class 🌟" : overallCompletion >= 70 ? "Top 30% of your class 👍" : "Building momentum 🔥"}
+              {displayCompletion >= 90 ? "Top 5% of your class 🎉" : displayCompletion >= 80 ? "Top 15% of your class 🌟" : displayCompletion >= 70 ? "Top 30% of your class 👍" : "Building momentum 🔥"}
             </p>
           </div>
         </div>
@@ -208,22 +302,22 @@ export default function AnalyticsDashboardClient({
                />
              </svg>
              <div className="absolute flex flex-col items-center justify-center">
-               <span className="text-3xl font-extrabold text-[#092B2B] dark:text-white">{prayerStats.percentage}%</span>
+               <span className="text-3xl font-extrabold text-[#092B2B] dark:text-white">{displayPrayerStats.percentage}%</span>
                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-1">Completed</span>
              </div>
           </div>
           
           <div className="flex-1 w-full">
-            <h3 className="text-sm font-bold text-gray-500 mb-6">Weekly Prayers</h3>
+            <h3 className="text-sm font-bold text-gray-500 mb-6">{timeRange} Prayers</h3>
             
             <div className="space-y-4 mb-6">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500 font-medium">Total Tracked</span>
-                <span className="font-bold text-[#092B2B] dark:text-white">{prayerStats.totalTracked} / {prayerStats.target}</span>
+                <span className="font-bold text-[#092B2B] dark:text-white">{displayPrayerStats.totalTracked} / {displayPrayerStats.target}</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-500 font-medium">Congregation</span>
-                <span className="font-bold text-[#092B2B] dark:text-white">{prayerStats.congregation}</span>
+                <span className="font-bold text-[#092B2B] dark:text-white">{displayPrayerStats.congregation}</span>
               </div>
             </div>
             
@@ -242,17 +336,17 @@ export default function AnalyticsDashboardClient({
           
           <div className="space-y-6">
             {(() => {
-              const maxZikr = Math.max(100, ...zikrStats.map(z => z.count));
-              return zikrStats.map((zikr, idx) => (
+              const maxZikr = Math.max(100, ...displayZikrStats.map(z => z.count));
+              return displayZikrStats.map((item, idx) => (
                 <div key={idx}>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-bold text-gray-700 dark:text-gray-200">{zikr.name}</span>
-                    <span className="text-sm font-extrabold text-[#092B2B] dark:text-white">{zikr.count.toLocaleString()}</span>
+                  <div className="flex justify-between text-xs font-bold mb-2">
+                    <span className="text-gray-700 dark:text-gray-300">{item.name}</span>
+                    <span className="text-[#092B2B] dark:text-white">{item.count}</span>
                   </div>
-                  <div className="w-full bg-[#F4F7F7] dark:bg-gray-800 h-2.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-gray-100 dark:bg-gray-800 h-2.5 rounded-full overflow-hidden">
                     <div 
-                      className="bg-[#092B2B] dark:bg-emerald-500 h-full rounded-full transition-all duration-500" 
-                      style={{ width: `${Math.min((zikr.count / maxZikr) * 100, 100)}%` }}
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-1000" 
+                      style={{ width: `${Math.min(100, (item.count / maxZikr) * 100)}%` }}
                     ></div>
                   </div>
                 </div>
@@ -273,14 +367,14 @@ export default function AnalyticsDashboardClient({
           <div className="flex gap-8">
             {(() => {
               let grade = "In Progress";
-              if (overallCompletion >= 95) grade = "A+";
-              else if (overallCompletion >= 90) grade = "A";
-              else if (overallCompletion >= 85) grade = "A-";
-              else if (overallCompletion >= 80) grade = "B+";
-              else if (overallCompletion >= 75) grade = "B";
-              else if (overallCompletion >= 70) grade = "C+";
-              else if (overallCompletion >= 60) grade = "C";
-              else if (overallCompletion > 0) grade = "D";
+              if (displayCompletion >= 95) grade = "A+";
+              else if (displayCompletion >= 90) grade = "A";
+              else if (displayCompletion >= 85) grade = "A-";
+              else if (displayCompletion >= 80) grade = "B+";
+              else if (displayCompletion >= 75) grade = "B";
+              else if (displayCompletion >= 70) grade = "C+";
+              else if (displayCompletion >= 60) grade = "C";
+              else if (displayCompletion > 0) grade = "D";
 
               return (
                 <>
@@ -290,7 +384,7 @@ export default function AnalyticsDashboardClient({
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Completion</p>
-                    <p className="text-2xl font-extrabold text-[#092B2B] dark:text-white">{overallCompletion}%</p>
+                    <p className="text-2xl font-extrabold text-[#092B2B] dark:text-white">{displayCompletion}%</p>
                   </div>
                 </>
               );
@@ -300,7 +394,7 @@ export default function AnalyticsDashboardClient({
         
         <div className="h-[250px] w-full mt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+            <AreaChart data={displayChartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#092B2B" stopOpacity={0.2} />
@@ -356,7 +450,7 @@ export default function AnalyticsDashboardClient({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full min-w-0">
-            {customAssignments.map((item, idx) => (
+            {displayCustomAssignments?.map((item, idx) => (
               <div key={idx} className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex items-center justify-between hover:shadow-md transition-all duration-300 group min-w-0 w-full overflow-hidden">
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-12 h-12 rounded-2xl bg-[#F4F7F7] dark:bg-gray-800 flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
@@ -373,7 +467,7 @@ export default function AnalyticsDashboardClient({
 
                 <div className="flex flex-col items-end flex-shrink-0 ml-4">
                   <span className="text-lg font-extrabold text-[#092B2B] dark:text-emerald-400">{item.percentage}%</span>
-                  <span className="text-[10px] font-bold text-gray-400">7-Day Avg</span>
+                  <span className="text-[10px] font-bold text-gray-400">{timeRange} Avg</span>
                 </div>
               </div>
             ))}

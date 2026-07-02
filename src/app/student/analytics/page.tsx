@@ -8,6 +8,8 @@ export default async function StudentAnalytics() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+
   // 1. Fetch live Gamification Stats
   const { currentStreak, knowledgePoints, completedTasks } = await calculateStudentStats(supabase, user.id);
 
@@ -266,6 +268,8 @@ export default async function StudentAnalytics() {
 
   return (
     <AnalyticsDashboardClient
+      userId={user.id}
+      userName={profile?.full_name || 'Student'}
       currentStreak={currentStreak}
       streakDiffText={streakDiffText}
       overallCompletion={overallCompletion || 84}
