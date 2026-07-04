@@ -5,8 +5,10 @@ import StudentSidebar from '@/components/student/StudentSidebar'
 
 export default async function StudentLayout({
   children,
+  modal,
 }: {
   children: React.ReactNode
+  modal: React.ReactNode
 }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -41,6 +43,7 @@ export default async function StudentLayout({
         
         {/* Page Content */}
         {children}
+        {modal}
       </main>
     </div>
   )

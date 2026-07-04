@@ -17,11 +17,12 @@ export async function joinClass(formData: FormData) {
   // 1. Find the class by code
   const { data: classData, error: classError } = await supabase
     .from('classes')
-    .select('id')
+    .select('id, name, teacher_id, profiles!classes_teacher_id_fkey(full_name)')
     .eq('class_code', classCode.toUpperCase())
     .single()
 
   if (classError || !classData) {
+    console.error('Error fetching class:', classError)
     return { error: 'Class not found. Please verify the code with your teacher.' }
   }
 
@@ -47,6 +48,6 @@ export async function joinClass(formData: FormData) {
     }
   }
 
-  // Success! Send them straight to their new dashboard!
-  redirect('/student/dashboard')
+  // Success! Return the class data so the UI can show the success modal
+  return { success: true, classData: { name: classData.name, teacher: (classData as any).profiles?.full_name || 'your instructor' } }
 }
