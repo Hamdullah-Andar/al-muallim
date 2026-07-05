@@ -70,6 +70,18 @@ export default function StudentSidebar() {
       </nav>
 
       <div className="p-6 space-y-1 mb-4 border-t border-black/5 dark:border-white/5 pt-6">
+        {pathname.startsWith('/student/class/') && (
+          <div className="space-y-3 mb-6">
+            <button className="flex items-center justify-center gap-2 w-full bg-[#092B2B] hover:bg-[#0a3838] dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-3.5 rounded-xl font-bold transition-all shadow-sm">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+              Join Live Session
+            </button>
+            <button className="flex items-center justify-center gap-2 w-full bg-white dark:bg-transparent hover:bg-gray-50 dark:hover:bg-white/5 text-[#092B2B] dark:text-emerald-400 border-2 border-black/10 dark:border-white/20 px-4 py-3 rounded-xl font-bold transition-all">
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
+              Ask Teacher
+            </button>
+          </div>
+        )}
          <Link href="/student/support" className="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100 font-medium transition-colors text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
            Support
