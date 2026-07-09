@@ -96,8 +96,10 @@ export default function ClassDetailClient({
     // OPTIMISTIC UI UPDATE
     // We instantly update the UI using React's startTransition so the user
     // doesn't feel any lag while the database syncs in the background.
+    // We use async/await here to ensure Next.js keeps the transition active
+    // until the Server Action and revalidatePath finish, preventing loading.tsx flash.
     // ========================================================================
-    startTransition(() => {
+    startTransition(async () => {
       const newData = { ...prayerData, [prayerName]: isChecked }
       
       // Calculate optimistic bitmask for the client state
@@ -117,8 +119,8 @@ export default function ClassDetailClient({
         return [...prev, { assignment_id: prayerAssignment.id, tracking_date: todayDateStr, progress_data: newData, completed_value: mask }]
       })
 
-      // Fire and forget Server Action to sync with Supabase
-      togglePrayer(studentId, prayerAssignment.id, prayerName, isChecked, todayDateStr, classData.id)
+      // Await the server action so the transition covers the revalidatePath network request
+      await togglePrayer(studentId, prayerAssignment.id, prayerName, isChecked, todayDateStr, classData.id)
     })
   }
 
@@ -129,7 +131,7 @@ export default function ClassDetailClient({
     const dateStr = zikrDate.split('T')[0]
 
     // Optimistic Update
-    startTransition(() => {
+    startTransition(async () => {
       setProgressState(prev => {
         const exists = prev.find(p => p.assignment_id === selectedZikrId && p.tracking_date === dateStr)
         if (exists) {
@@ -138,8 +140,8 @@ export default function ClassDetailClient({
         return [...prev, { assignment_id: selectedZikrId, tracking_date: dateStr, completed_value: count }]
       })
 
-      // Server Action
-      logZikrSession(studentId, selectedZikrId, count, dateStr, classData.id)
+      // Await the server action
+      await logZikrSession(studentId, selectedZikrId, count, dateStr, classData.id)
     })
 
     setIsZikrModalOpen(false)
@@ -376,7 +378,16 @@ export default function ClassDetailClient({
                       <div key={zikr.id}>
                         <div className="flex justify-between items-end mb-2">
                           <span className="font-bold text-sm truncate pr-2" title={zikr.title}>{zikr.title} <span className="opacity-50 text-xs font-normal">({target}x)</span></span>
-                          <span className="text-[10px] font-black tracking-wider shrink-0"><span className={pct === 100 ? 'text-[#092B2B] dark:text-emerald-400' : 'opacity-50'}>{completed}</span> / {target}</span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            {completed > target && (
+                              <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded-full uppercase tracking-wider">
+                                +{completed - target} Bonus
+                              </span>
+                            )}
+                            <span className="text-[10px] font-black tracking-wider">
+                              <span className={pct === 100 ? 'text-[#092B2B] dark:text-emerald-400' : 'opacity-50'}>{completed > target ? target : completed}</span> / {target}
+                            </span>
+                          </div>
                         </div>
                         <div className="w-full bg-[#fbfbfb] dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
                           <div className={`h-full rounded-full transition-all duration-500 ${pct === 100 ? 'bg-[#092B2B] dark:bg-emerald-500' : 'bg-[#092B2B]/60 dark:bg-emerald-400/60'}`} style={{ width: `${pct}%` }}></div>
@@ -388,6 +399,7 @@ export default function ClassDetailClient({
 
                 {zikrAssignments.length > 0 && (
                   <button 
+                    type="button"
                     onClick={() => setIsZikrModalOpen(true)}
                     className="w-full mt-8 border-2 border-dashed border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 hover:bg-black/5 dark:hover:bg-white/5 py-3 rounded-2xl text-xs font-bold opacity-60 hover:opacity-100 transition-all flex justify-center items-center gap-2"
                   >
@@ -489,17 +501,19 @@ export default function ClassDetailClient({
                 )}
               </div>
 
-              <div className="flex gap-4 mt-8">
+              <div className="flex gap-4 pt-4">
                 <button 
+                  type="button"
                   onClick={() => setIsZikrModalOpen(false)}
-                  className="flex-1 py-4 font-bold text-sm hover:bg-black/5 dark:hover:bg-white/5 rounded-2xl transition-colors"
+                  className="flex-1 py-4 rounded-2xl font-bold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
                 >
                   Cancel
                 </button>
                 <button 
+                  type="button"
                   onClick={handleLogZikr}
                   disabled={!selectedZikrId || !zikrCount || isPending}
-                  className="flex-1 bg-[#092B2B] hover:bg-[#0a3838] dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white py-4 font-bold text-sm rounded-2xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 bg-[#092B2B] dark:bg-emerald-500 text-white rounded-2xl font-bold shadow-lg shadow-black/10 hover:shadow-black/20 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
                 >
                   {isPending ? 'Logging...' : 'Log Session'}
                 </button>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { incrementZikrProgress } from '@/app/student/dashboard/actions'
 
 interface ZikrTrackerRowProps {
@@ -12,31 +12,42 @@ export default function ZikrTrackerRow({ assignment, initialProgress }: ZikrTrac
   const [count, setCount] = useState(initialProgress?.completed_value || 0)
   const [isCompleted, setIsCompleted] = useState(initialProgress?.is_completed || false)
   const [isAnimating, setIsAnimating] = useState(false)
+  const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   const targetCount = assignment.target_count || 200 // Default to 200 based on master list
 
-  const handleIncrement = async () => {
+  const handleIncrement = () => {
     if (isCompleted) return
 
     // Visual animation logic
     setIsAnimating(true)
     setTimeout(() => setIsAnimating(false), 200)
 
-    const newCount = count + 1
-    const newlyCompleted = newCount >= targetCount
+    setCount(prevCount => {
+      const newCount = prevCount + 1
+      const newlyCompleted = newCount >= targetCount
+      
+      if (newlyCompleted) {
+        setIsCompleted(true)
+      }
 
-    // Optimistic UI Update
-    setCount(newCount)
-    if (newlyCompleted) setIsCompleted(true)
+      // Debounce the server action to prevent flooding the backend on rapid clicks
+      if (timerRef.current) clearTimeout(timerRef.current)
+      
+      timerRef.current = setTimeout(async () => {
+        try {
+          // Send the absolute new count to the server
+          await incrementZikrProgress(assignment.id, newCount, newlyCompleted)
+        } catch (e) {
+          console.error('Failed to sync Zikr progress:', e)
+          // Revert state if the server absolutely failed
+          setCount(prevCount)
+          setIsCompleted(prevCount >= targetCount)
+        }
+      }, 600) // 600ms debounce window
 
-    // Server Action Update (Upsert & Revalidate)
-    try {
-      await incrementZikrProgress(assignment.id, newCount, newlyCompleted)
-    } catch (e) {
-      console.error(e)
-      setCount(count) // Revert on failure
-      setIsCompleted(isCompleted)
-    }
+      return newCount
+    })
   }
 
   const progressPercentage = Math.min((count / targetCount) * 100, 100)
@@ -49,9 +60,16 @@ export default function ZikrTrackerRow({ assignment, initialProgress }: ZikrTrac
           <h3 className={`font-bold text-lg ${isCompleted ? 'text-primary-600 dark:text-primary-400' : 'text-gray-900 dark:text-white'}`}>
             {assignment.title}
           </h3>
-          <span className="text-sm font-bold text-gray-500">
-            {count}/{targetCount}
-          </span>
+          <div className="flex items-center gap-2">
+            {count > targetCount && (
+              <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                +{count - targetCount} Bonus
+              </span>
+            )}
+            <span className="text-sm font-bold text-gray-500">
+              {count > targetCount ? targetCount : count}/{targetCount}
+            </span>
+          </div>
         </div>
         
         {/* Sleek Progress Bar */}
@@ -61,6 +79,12 @@ export default function ZikrTrackerRow({ assignment, initialProgress }: ZikrTrac
             style={{ width: `${progressPercentage}%` }}
           ></div>
         </div>
+
+        {count > targetCount && (
+          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-3 font-medium leading-relaxed">
+            MashAllah! You've exceeded your goal. Extra counts recorded as bonus.
+          </p>
+        )}
       </div>
 
       {/* Right Side: Circular Plus Button */}
