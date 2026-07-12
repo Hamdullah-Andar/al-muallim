@@ -31,9 +31,9 @@ export default function CreateAssignmentModal({
       formData.set('trackingType', trackingType)
     }
 
-    // If they selected Custom, use their typed-in category name
+    // If they selected Custom, use their typed-in category name or fallback to 'Custom'
     if (category === 'Custom') {
-      formData.set('category', customCategory)
+      formData.set('category', customCategory.trim() || 'Custom')
     }
 
     try {

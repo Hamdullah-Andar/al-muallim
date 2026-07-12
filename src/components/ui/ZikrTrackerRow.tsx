@@ -23,7 +23,7 @@ export default function ZikrTrackerRow({ assignment, initialProgress }: ZikrTrac
     setIsAnimating(true)
     setTimeout(() => setIsAnimating(false), 200)
 
-    setCount(prevCount => {
+    setCount((prevCount: number) => {
       const newCount = prevCount + 1
       const newlyCompleted = newCount >= targetCount
       
