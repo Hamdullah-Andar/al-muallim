@@ -105,7 +105,12 @@ ALTER TABLE public.class_students ENABLE ROW LEVEL SECURITY;
 -- Teachers can upload books (PDFs) for students to read as assignments.
 CREATE TABLE public.books (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  class_id uuid REFERENCES public.classes(id) ON DELETE CASCADE,
   title text NOT NULL,
+  author text DEFAULT 'Class Instructor',
+  category text DEFAULT 'General Reading',
+  pages integer DEFAULT 100,
+  description text DEFAULT 'Class reading material provided by your instructor.',
   -- The URL pointing to where the PDF is stored in Supabase Storage.
   file_url text NOT NULL,
   -- Which teacher uploaded this book?

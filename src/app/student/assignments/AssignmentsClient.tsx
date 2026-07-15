@@ -73,7 +73,8 @@ export default function AssignmentsClient({
 
     const target = assignment.content?.target || assignment.target_count || 0
     if (target > 0) {
-      return { current: completedVal, target, unit: 'Times' }
+      const unit = assignment.content?.unit || assignment.unit || (assignment.category === 'Reading' ? 'Ayat' : 'Times')
+      return { current: completedVal, target, unit }
     }
 
     return { current: prog?.is_completed ? 1 : 0, target: 1, unit: 'Task' }
@@ -122,6 +123,23 @@ export default function AssignmentsClient({
     }
 
     return 'Custom'
+  }
+
+  const getReadingLink = (assignment: any) => {
+    const titleLower = (assignment.title || '').toLowerCase()
+    const linked = assignment.content?.linkedBookId || assignment.linked_book_id
+    const param = `?assignmentId=${assignment.id}`
+    if (linked === 'quran' || titleLower.includes('quran') || titleLower.includes('recit') || titleLower.includes('surah') || titleLower.includes('juz') || titleLower.includes('ayah')) {
+      return `/student/library/quran${param}`
+    }
+    if (linked && linked !== 'quran') {
+      return `/student/library/${linked}${param}`
+    }
+    if (titleLower.includes('tafsir') || titleLower.includes('anwar')) return `/student/library/7${param}`
+    if (titleLower.includes('hadith') || titleLower.includes('riyad')) return `/student/library/9${param}`
+    if (titleLower.includes('fiqh')) return `/student/library/cont-fiqh${param}`
+    if (titleLower.includes('history') || titleLower.includes('caliph')) return `/student/library/cont-history${param}`
+    return `/student/library/quran${param}`
   }
 
   // Practical, clean list of categories for filtering
@@ -354,10 +372,23 @@ export default function AssignmentsClient({
                             style={{ width: `${pct}%` }}
                           ></div>
                         </div>
+                        {progInfo.current > progInfo.target && (
+                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-medium leading-relaxed">
+                            MashAllah! You've exceeded your goal. You have read {progInfo.current - progInfo.target} {progInfo.unit.toLowerCase()} extra.
+                          </p>
+                        )}
                       </div>
 
-                      {/* Action Button: Go to Class or Completed */}
-                      <div className="shrink-0">
+                      {/* Action Button: Read Online & Go to Class */}
+                      <div className="shrink-0 flex items-center gap-3">
+                        {(cat === 'Reading' || assignment.content?.linkedBookId || assignment.linked_book_id) && !completed && (
+                          <Link
+                            href={getReadingLink(assignment)}
+                            className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-500/20 shadow-sm transition-all"
+                          >
+                            <span>Read Online ›</span>
+                          </Link>
+                        )}
                         {completed ? (
                           <div className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-xs bg-[#dcf5ea] text-[#0a6c4c] dark:bg-emerald-900/40 dark:text-emerald-300">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
