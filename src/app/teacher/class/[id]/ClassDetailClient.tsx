@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import CreateAssignmentButton from '@/components/CreateAssignmentButton'
-import { uploadClassBook, deleteClassBook } from './actions'
+import { uploadClassBook, deleteClassBook, toggleClassActiveStatus } from './actions'
 import { createClient } from '@/utils/supabase/client'
 
 interface ClassDetailClientProps {
@@ -17,7 +17,22 @@ export default function ClassDetailClient({ classData, students = [], assignment
   const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'assignments' | 'books' | 'discussions'>('overview')
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isSubmittingBook, setIsSubmittingBook] = useState(false)
+  const [isArchiving, setIsArchiving] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+
+  async function handleToggleArchive() {
+    const action = classData.is_active !== false ? 'archive' : 'unarchive'
+    if (!confirm(`Are you sure you want to ${action} this class?`)) return
+    
+    setIsArchiving(true)
+    try {
+      await toggleClassActiveStatus(classData.id, classData.is_active === false)
+    } catch (err: any) {
+      alert(`Failed to ${action} class: ` + err.message)
+    } finally {
+      setIsArchiving(false)
+    }
+  }
 
   async function handleBookSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -90,9 +105,23 @@ export default function ClassDetailClient({ classData, students = [], assignment
             </p>
           </div>
           
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-center min-w-[200px] shadow-inner">
-            <p className="text-xs uppercase tracking-widest font-bold opacity-70 mb-2">Class Code</p>
-            <p className="text-4xl font-mono font-bold tracking-[0.2em]">{classData.class_code}</p>
+          <div className="flex flex-col items-center gap-3">
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-center min-w-[200px] shadow-inner">
+              <p className="text-xs uppercase tracking-widest font-bold opacity-70 mb-2">Class Code</p>
+              <p className="text-4xl font-mono font-bold tracking-[0.2em]">{classData.class_code}</p>
+            </div>
+            
+            <button 
+              onClick={handleToggleArchive}
+              disabled={isArchiving}
+              className={`w-full py-2 px-4 rounded-xl text-sm font-bold transition-all border backdrop-blur-sm ${
+                classData.is_active !== false 
+                  ? 'bg-red-500/20 text-red-100 border-red-500/30 hover:bg-red-500/30' 
+                  : 'bg-emerald-500/20 text-emerald-100 border-emerald-500/30 hover:bg-emerald-500/30'
+              }`}
+            >
+              {isArchiving ? 'Saving...' : classData.is_active !== false ? 'Archive Class' : 'Unarchive Class'}
+            </button>
           </div>
         </div>
         
@@ -301,14 +330,17 @@ export default function ClassDetailClient({ classData, students = [], assignment
                           <span className="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">
                             {assignment.category}
                           </span>
-                          {assignment.tracking_type === 'counter' && (
-                            <span className="text-xs opacity-60 font-medium">
-                              Target: {assignment.content.target} {assignment.content.unit}
+                          {(assignment.tracking_type === 'percentage' || assignment.content?.unit === '%' || assignment.unit === '%' || assignment.content?.trackingType === 'percentage') ? (
+                            <span className="text-xs text-orange-600 font-bold">
+                              Target: 0% (Spiritual Detox)
                             </span>
-                          )}
-                          {assignment.tracking_type === 'checkbox' && (
-                            <span className="text-xs opacity-60 font-medium">Daily Checkbox</span>
-                          )}
+                          ) : assignment.tracking_type === 'counter' ? (
+                            <span className="text-xs opacity-60 font-medium">
+                              Target: {assignment.content?.target ?? assignment.target_count ?? 0} {assignment.content?.unit || assignment.unit || ''}
+                            </span>
+                          ) : assignment.tracking_type === 'checkbox' ? (
+                            <span className="text-xs opacity-60 font-medium">Daily Checkbox Habit</span>
+                          ) : null}
                         </div>
                         <p className="font-bold text-lg">{assignment.title}</p>
                       </div>
@@ -377,7 +409,11 @@ export default function ClassDetailClient({ classData, students = [], assignment
                   </span>
                   <h3 className="font-bold text-lg mt-2">{assignment.title}</h3>
                   <p className="text-xs opacity-60 mt-1">
-                    {assignment.tracking_type === 'counter' ? `Target: ${assignment.content.target} ${assignment.content.unit}` : 'Daily Checkbox Habit'}
+                    {(assignment.tracking_type === 'percentage' || assignment.content?.unit === '%' || assignment.unit === '%' || assignment.content?.trackingType === 'percentage')
+                      ? `Target: 0% (Spiritual Detox)`
+                      : assignment.tracking_type === 'counter'
+                      ? `Target: ${assignment.content?.target ?? assignment.target_count ?? 0} ${assignment.content?.unit || assignment.unit || ''}`
+                      : 'Daily Checkbox Habit'}
                   </p>
                 </div>
               </div>

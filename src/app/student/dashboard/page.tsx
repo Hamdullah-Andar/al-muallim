@@ -19,16 +19,20 @@ export default async function StudentDashboard() {
   // 1. Fetch Profile Data
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
-  // 2. Fetch the classes this student is enrolled in
-  const { data: enrollments } = await supabase.from('class_students').select('class_id, classes(name, teacher_id)').eq('student_id', user.id)
-  const classIds = enrollments?.map(e => e.class_id) || []
+  // 2. Fetch the active classes this student is enrolled in
+  const { data: enrollments } = await supabase.from('class_students').select('class_id, classes(name, teacher_id, is_active)').eq('student_id', user.id)
+  
+  // Filter out any archived classes
+  const activeEnrollments = enrollments?.filter((e: any) => e.classes && e.classes.is_active !== false) || []
+  
+  const classIds = activeEnrollments.map((e: any) => e.class_id)
   
   // Also keep full class objects for the "Joined Classes" section
-  const joinedClasses = enrollments?.map((e: any) => ({
+  const joinedClasses = activeEnrollments.map((e: any) => ({
     id: e.class_id,
-    name: e.classes?.name,
-    teacherId: e.classes?.teacher_id
-  })) || []
+    name: e.classes.name,
+    teacherId: e.classes.teacher_id
+  }))
 
   // 3. Fetch all active assignments for those classes
   let assignments: any[] = []
@@ -38,10 +42,11 @@ export default async function StudentDashboard() {
       .select('*, classes(name)')
       .in('class_id', classIds)
       .eq('is_daily', true)
+      .order('created_at', { ascending: true })
     assignments = classAssignments || []
   }
 
-  // 4. Fetch the student's progress for TODAY
+  // 4. Fetch the student's progress for TODAY + all historical progress & book_progress for starting point calculation
   const todayDate = new Date().toISOString().split('T')[0]
   
   const { data: progress } = await supabase
@@ -50,10 +55,39 @@ export default async function StudentDashboard() {
     .eq('student_id', user.id)
     .eq('tracking_date', todayDate)
 
-  // Create a quick lookup map so we know which assignments are completed
+  const { data: allHistoryProgress } = await supabase
+    .from('student_progress')
+    .select('assignment_id, completed_value, tracking_date')
+    .eq('student_id', user.id)
+
+  const { data: bookProgressRows } = await supabase
+    .from('book_progress')
+    .select('*')
+    .eq('student_id', user.id)
+
+  // Create a quick lookup map + attach computed starting point
   const progressMap: Record<string, any> = {}
-  progress?.forEach(p => {
-    progressMap[p.assignment_id] = p
+  assignments?.forEach(a => {
+    const todayProg = progress?.find(p => p.assignment_id === a.id) || {
+      assignment_id: a.id,
+      completed_value: 0,
+      is_completed: false
+    }
+
+    const pastProg = allHistoryProgress?.filter(p => p.assignment_id === a.id && p.tracking_date < todayDate) || []
+    const pastCompletedSum = pastProg.reduce((sum, p) => sum + (p.completed_value || 0), 0)
+    
+    const linkedId = a.content?.linkedBookId || a.linked_book_id
+    const bookProg = linkedId ? bookProgressRows?.find(bp => bp.book_id === linkedId) : null
+    const bookProgPage = bookProg ? (bookProg.completed_portions || bookProg.current_page || 0) : 0
+
+    const startingPoint = Math.max(pastCompletedSum + 1, bookProgPage + 1, 1)
+
+    progressMap[a.id] = {
+      ...todayProg,
+      starting_point: startingPoint,
+      past_completed_sum: pastCompletedSum
+    }
   })
 
   // 5. Group assignments cleanly by category
@@ -65,15 +99,27 @@ export default async function StudentDashboard() {
   
   const categories = Object.keys(groupedAssignments).sort()
 
-  const leftColumnCategories = ['zikr', 'nawafil'] // Prayer removed, handled separately
-  const leftAssignments = assignments.filter(a => leftColumnCategories.includes(a.category?.toLowerCase() || ''))
-  const rightAssignments = assignments.filter(a => !leftColumnCategories.includes(a.category?.toLowerCase() || '') && a.category?.toLowerCase() !== 'prayer' && a.category?.toLowerCase() !== 'munkarat')
-
   const prayerAssignment = assignments.find(a => a.category?.toLowerCase() === 'prayer')
   const prayerProgress = prayerAssignment ? progress?.find(p => p.assignment_id === prayerAssignment.id) : null
 
-  const munkaratAssignment = assignments.find(a => a.category?.toLowerCase() === 'munkarat')
-  const munkaratProgress = munkaratAssignment ? progress?.find(p => p.assignment_id === munkaratAssignment.id) : null
+  const nonPrayerAssignments = assignments.filter(a => a.category?.toLowerCase() !== 'prayer')
+  const leftAssignments = nonPrayerAssignments.filter((_, idx) => idx % 2 === 0)
+  const rightAssignments = nonPrayerAssignments.filter((_, idx) => idx % 2 === 1)
+
+  const renderAssignmentCard = (assignment: any) => {
+    const tLower = (assignment.title || '').toLowerCase()
+    const isFiveSense = assignment.category?.toLowerCase() === 'munkarat' && (
+      tLower.includes('5-sense') || tLower.includes('five sense') || tLower.includes('avoid munkarat') || tLower === 'munkarat' || tLower.includes('senses')
+    )
+
+    if (isFiveSense) {
+      return <MankiratTracker key={assignment.id} assignment={assignment} initialProgress={progressMap[assignment.id]} />
+    }
+    if (assignment.category?.toLowerCase() === 'zikr') {
+      return <ZikrTrackerRow key={assignment.id} assignment={assignment} initialProgress={progressMap[assignment.id]} />
+    }
+    return <AcademicTaskCard key={assignment.id} assignment={assignment} initialProgress={progressMap[assignment.id]} />
+  }
 
   // Calculate high-level progress stats for TODAY
   const totalTasks = assignments.length
@@ -165,56 +211,41 @@ export default async function StudentDashboard() {
          />
       )}
 
-      {/* 3. The Two Columns (Spiritual Rituals vs Academic) */}
+      {/* 3. The Two Columns (Alternating Assignments by Creation Order) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
         
-        {/* LEFT COLUMN: Spiritual Rituals (Zikr, Prayers, Nawafil) */}
+        {/* LEFT COLUMN: 1st, 3rd, 5th... assignments */}
         <div className="space-y-6">
            <div className="flex justify-between items-end mb-4 border-b border-gray-100 pb-2">
-             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Daily Zikr Tracking</h2>
+             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Daily Assignments (Part 1)</h2>
              <span className="text-xs font-bold text-gray-400">{new Date().toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' })}</span>
            </div>
            
            {leftAssignments.length === 0 ? (
              <div className="bg-white dark:bg-black/40 p-8 rounded-3xl text-center border border-dashed border-black/10 dark:border-white/10">
-               <p className="text-gray-500 text-sm">No spiritual tracking assigned for today.</p>
+               <p className="text-gray-500 text-sm">No tasks assigned for today.</p>
              </div>
            ) : (
              <div className="space-y-4">
-                {leftAssignments.map(assignment => {
-                   if (assignment.category?.toLowerCase() === 'zikr') {
-                     return <ZikrTrackerRow key={assignment.id} assignment={assignment} initialProgress={progressMap[assignment.id]} />
-                   }
-                   return <AcademicTaskCard key={assignment.id} assignment={assignment} initialProgress={progressMap[assignment.id]} />
-                })}
+                {leftAssignments.map(renderAssignmentCard)}
              </div>
            )}
         </div>
 
-        {/* RIGHT COLUMN: Academic To-Do List (Tilawat, Hadith, Tarjoma, etc) */}
+        {/* RIGHT COLUMN: 2nd, 4th, 6th... assignments */}
         <div className="space-y-6">
            <div className="flex justify-between items-end mb-4 border-b border-gray-100 pb-2">
-             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Academic To-Do List</h2>
-             <span className="text-xs font-bold text-primary-600 cursor-pointer">View All</span>
+             <h2 className="text-xl font-bold text-gray-900 dark:text-white">Daily Assignments (Part 2)</h2>
+             <Link href="/student/assignments" className="text-xs font-bold text-primary-600 hover:underline">View All</Link>
            </div>
            
-           {rightAssignments.length === 0 && !munkaratAssignment ? (
+           {rightAssignments.length === 0 ? (
              <div className="bg-white dark:bg-black/40 p-8 rounded-3xl text-center border border-dashed border-black/10 dark:border-white/10">
-               <p className="text-gray-500 text-sm">No academic tasks assigned for today.</p>
+               <p className="text-gray-500 text-sm">No more tasks assigned for today.</p>
              </div>
            ) : (
              <div className="space-y-4">
-                {/* Your Custom Mankirat Tracker! */}
-                {munkaratAssignment && (
-                   <MankiratTracker 
-                     assignment={munkaratAssignment} 
-                     initialProgress={munkaratProgress} 
-                   />
-                )}
-
-                {rightAssignments.map(assignment => (
-                   <AcademicTaskCard key={assignment.id} assignment={assignment} initialProgress={progressMap[assignment.id]} />
-                ))}
+                {rightAssignments.map(renderAssignmentCard)}
              </div>
            )}
         </div>

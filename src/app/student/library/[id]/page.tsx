@@ -16,6 +16,7 @@ export default async function StudentBookDetailPage({
 
   const resolvedSearchParams = searchParams ? ('then' in searchParams ? await searchParams : searchParams) : {}
   const assignmentId = typeof resolvedSearchParams?.assignmentId === 'string' ? resolvedSearchParams.assignmentId : null
+  const startRoba = typeof resolvedSearchParams?.startRoba === 'string' && !isNaN(Number(resolvedSearchParams.startRoba)) ? Number(resolvedSearchParams.startRoba) : null
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -51,6 +52,7 @@ export default async function StudentBookDetailPage({
       user={user}
       profile={profile}
       initialAssignmentId={assignmentId}
+      initialStartRoba={startRoba}
       initialBookData={initialBookData}
     />
   )

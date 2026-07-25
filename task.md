@@ -51,3 +51,26 @@
 - `[x]` Build `DailyPrayersCard.tsx` with dynamic lock/unlock syncing to live Aladhan API.
 - `[x]` Automate Teacher Dashboard to lock titles and tracking types for Munkarat and Prayer assignments.
 - `[x]` Redesign Joined Classes cards with images.
+
+## 8. Syncing, Archiving, and Layout Polish
+- `[x]` **Multi-Class Prayer Sync**
+  - `[x]` Update `togglePrayerMask` to fetch and sync all active prayer assignments.
+  - `[x]` Conditionally render Daily Prayers only for classes with prayer assignments.
+- `[x]` **Student Dashboard Layout**
+  - `[x]` Order non-prayer assignments by `created_at` (ascending).
+  - `[x]` Split assignments into a 2-column grid (left and right chronologically).
+- `[x]` **Class Archiving Feature**
+  - `[x]` Create SQL migration `04_add_is_active_to_classes.sql`.
+  - `[x]` Add `toggleClassActiveStatus` to `src/app/teacher/class/[id]/actions.ts`.
+  - `[x]` Add "Archive Class" button to `src/app/teacher/class/[id]/ClassDetailClient.tsx`.
+  - `[x]` Filter archived classes from the active dashboard in `src/app/student/dashboard/page.tsx`.
+
+## 9. Digital Library & Linked Progress Tracking
+- `[x]` **Class Books & Storage**
+  - `[x]` Create SQL migration `02_class_books.sql`.
+  - `[x]` Build direct-to-storage PDF upload logic in `ClassDetailClient.tsx`.
+  - `[x]` Implement `uploadClassBook` and `deleteClassBook` in `actions.ts`.
+- `[x]` **Book Progress Syncing**
+  - `[x]` Create SQL migration `03_book_progress.sql`.
+  - `[x]` Update student dashboard to query `book_progress` and historical progress.
+  - `[x]` Upgrade `AcademicTaskCard.tsx` to display dynamic `starting_point` logic based on previous reading history.

@@ -10,6 +10,7 @@ interface BookDetailClientProps {
   user: any
   profile: any
   initialAssignmentId?: string | null
+  initialStartRoba?: number | null
   initialBookData?: any
 }
 
@@ -20,7 +21,7 @@ interface ChapterItem {
   status: 'completed' | 'current' | 'locked'
 }
 
-export default function BookDetailClient({ bookId, user, profile, initialAssignmentId, initialBookData }: BookDetailClientProps) {
+export default function BookDetailClient({ bookId, user, profile, initialAssignmentId, initialStartRoba, initialBookData }: BookDetailClientProps) {
   const router = useRouter()
   const isQuranBook = bookId === 'quran' || bookId.toLowerCase().includes('quran') || Boolean(initialBookData?.title && initialBookData.title.toLowerCase().includes('quran'))
   
@@ -30,7 +31,7 @@ export default function BookDetailClient({ bookId, user, profile, initialAssignm
   const [activeReaderChapter, setActiveReaderChapter] = useState<ChapterItem | null>(null)
   const [isSyncingLog, setIsSyncingLog] = useState<boolean>(false)
   const [loggedPortionsToday, setLoggedPortionsToday] = useState<number>(0)
-  const [quranRobaNumber, setQuranRobaNumber] = useState<number>(1)
+  const [quranRobaNumber, setQuranRobaNumber] = useState<number>(initialStartRoba || 1)
   const [quranVerses, setQuranVerses] = useState<any[]>([])
   const [isLoadingVerses, setIsLoadingVerses] = useState<boolean>(false)
   const [quranFetchError, setQuranFetchError] = useState<string | null>(null)
@@ -177,6 +178,19 @@ Through detailed historical accounts and primary source translations, Dr. Muzaff
     }
 
     if (id === 'quran' || id === 'holy-quran' || id === '0') {
+      const activeStart = initialStartRoba || quranRobaNumber || 1
+      const generatedChapters: ChapterItem[] = Array.from({ length: 120 }, (_, i) => {
+        const n = i + 1
+        const j = Math.ceil(n / 4)
+        const r = ((n - 1) % 4) + 1
+        return {
+          id: n,
+          title: `Juz ${j} • Roba ${r} (Rub el Juz ${n})`,
+          itemsCount: '~5 Pages • Live Quran.com API',
+          status: n === activeStart ? 'current' : n < activeStart ? 'completed' : 'locked'
+        }
+      })
+
       return {
         title: 'The Holy Quran (Al-Quran Al-Kareem)',
         author: 'Divine Revelation (Mushaf Madani & Uthmani Script)',
@@ -185,24 +199,15 @@ Through detailed historical accounts and primary source translations, Dr. Muzaff
         rating: 5.0,
         reviewsCount: '15,420',
         pages: 604,
-        completedPages: 1,
-        percentComplete: 2,
+        completedPages: Math.min(604, Math.round(activeStart * 5)),
+        percentComplete: Math.round((activeStart / 120) * 100),
         timeSpent: '48h 15m',
         notesCount: '30 Items',
         lastSession: 'Today',
         description: `The Holy Quran is the central religious text of Islam, believed by Muslims to be a revelation from God (Allah). Organized in 114 Surahs across 30 Juz (divided into 120 Quarters of Juz / Rub' el Juz).
 
 This interactive reader is linked live to the official Quran.com API (by_rub_el_hizb endpoints grouped into Quarter Juz). Students recite authentic Uthmani script portion by portion (1 Roba of Juz each day from the beginning, ~5 pages per portion) and sync progress directly to their assignment tracker.`,
-        chapters: [
-          { id: 1, title: 'Juz 1 • Roba 1 (Rub el Juz 1): Surah Al-Fatiha (1:1) to Al-Baqarah (2:43)', itemsCount: '50 Ayat (~5 Pages) • Live Quran.com API', status: 'current' },
-          { id: 2, title: 'Juz 1 • Roba 2 (Rub el Juz 2): Surah Al-Baqarah (2:44) to (2:74)', itemsCount: '31 Ayat (~5 Pages) • Live Quran.com API', status: 'completed' },
-          { id: 3, title: 'Juz 1 • Roba 3 (Rub el Juz 3): Surah Al-Baqarah (2:75) to (2:105)', itemsCount: '31 Ayat (~5 Pages) • Live Quran.com API', status: 'completed' },
-          { id: 4, title: 'Juz 1 • Roba 4 (Rub el Juz 4): Surah Al-Baqarah (2:106) to (2:141)', itemsCount: '36 Ayat (~5 Pages) • Live Quran.com API', status: 'completed' },
-          { id: 5, title: 'Juz 2 • Roba 1 (Rub el Juz 5): Surah Al-Baqarah (2:142) to (2:176)', itemsCount: '35 Ayat (~5 Pages) • Live Quran.com API', status: 'completed' },
-          { id: 6, title: 'Juz 2 • Roba 2 (Rub el Juz 6): Surah Al-Baqarah (2:177) to (2:202)', itemsCount: '26 Ayat (~5 Pages) • Live Quran.com API', status: 'completed' },
-          { id: 7, title: 'Juz 2 • Roba 3 (Rub el Juz 7): Surah Al-Baqarah (2:203) to (2:232)', itemsCount: '30 Ayat (~5 Pages) • Live Quran.com API', status: 'completed' },
-          { id: 8, title: 'Juz 2 • Roba 4 (Rub el Juz 8): Surah Al-Baqarah (2:233) to (2:252)', itemsCount: '20 Ayat (~5 Pages) • Live Quran.com API', status: 'completed' }
-        ] as ChapterItem[]
+        chapters: generatedChapters
       }
     }
 
@@ -455,6 +460,13 @@ The book is widely considered one of the most important works in the Islamic wor
                 onClick={() => {
                   if (book.fileUrl && book.fileUrl.startsWith('http')) {
                     window.open(book.fileUrl, '_blank')
+                    return
+                  }
+                  if (isQuranBook) {
+                    const targetRoba = initialStartRoba || quranRobaNumber || 1
+                    const matchCh = book.chapters.find(c => c.id === targetRoba) || book.chapters.find(c => c.status === 'current') || book.chapters[0]
+                    setQuranRobaNumber(targetRoba)
+                    setActiveReaderChapter(matchCh)
                     return
                   }
                   const currentCh = book.chapters.find(c => c.status === 'current') || book.chapters[0]
@@ -785,7 +797,7 @@ The book is widely considered one of the most important works in the Islamic wor
                             Live Quran.com API Recitation
                           </span>
                           <h4 className="font-bold text-base text-[#092B2B] dark:text-white">
-                            Rub el Juz (Quarter Juz) {quranRobaNumber} of 120
+                            Juz {Math.ceil(quranRobaNumber / 4)} • Roba {((quranRobaNumber - 1) % 4) + 1} of 4 <span className="text-xs font-normal text-gray-500">(Overall Rub #{quranRobaNumber} of 120)</span>
                           </h4>
                         </div>
                       </div>
@@ -806,11 +818,15 @@ The book is widely considered one of the most important works in the Islamic wor
                           disabled={isLoadingVerses}
                           className="px-3 py-2 rounded-xl bg-white dark:bg-[#111] border border-black/10 dark:border-white/10 text-xs font-bold text-[#092B2B] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/30 transition-all"
                         >
-                          {Array.from({ length: 120 }, (_, i) => i + 1).map(n => (
-                            <option key={n} value={n}>
-                              Roba {n} (Juz {Math.ceil(n / 4)})
-                            </option>
-                          ))}
+                          {Array.from({ length: 120 }, (_, i) => i + 1).map(n => {
+                            const j = Math.ceil(n / 4)
+                            const r = ((n - 1) % 4) + 1
+                            return (
+                              <option key={n} value={n}>
+                                Juz {j} • Roba {r} (Overall #{n})
+                              </option>
+                            )
+                          })}
                         </select>
 
                         <button
@@ -829,7 +845,7 @@ The book is widely considered one of the most important works in the Islamic wor
                       <div className="py-20 text-center space-y-4 font-sans">
                         <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
                         <p className="text-sm font-bold text-gray-500 dark:text-gray-400">
-                          Connecting to Quran.com API & loading Uthmani script for Rub el Juz {quranRobaNumber}...
+                          Connecting to Quran.com API & loading Uthmani script for Juz {Math.ceil(quranRobaNumber / 4)} • Roba {((quranRobaNumber - 1) % 4) + 1}...
                         </p>
                       </div>
                     ) : quranFetchError ? (
@@ -903,7 +919,7 @@ The book is widely considered one of the most important works in the Islamic wor
                       📚 Assignment Sync
                     </span>
                     <h4 className="font-bold text-sm text-gray-900 dark:text-white">
-                      {isQuranBook ? `Finished reciting Rub el Juz ${quranRobaNumber} today?` : `Finished reading today's portion?`}
+                      {isQuranBook ? `Finished reciting Juz ${Math.ceil(quranRobaNumber / 4)} • Roba ${((quranRobaNumber - 1) % 4) + 1} today?` : `Finished reading today's portion?`}
                     </h4>
                     <p className="text-xs text-gray-500 mt-0.5">
                       {isQuranBook 
@@ -918,10 +934,17 @@ The book is widely considered one of the most important works in the Islamic wor
                     onClick={async () => {
                       setIsSyncingLog(true)
                       try {
-                        await syncLibraryPortionRead(isQuranBook, bookId, initialAssignmentId)
+                        await syncLibraryPortionRead(
+                          isQuranBook,
+                          bookId,
+                          initialAssignmentId,
+                          initialBookData?.title || book.title,
+                          isQuranBook ? quranRobaNumber : (loggedPortionsToday + 1) * 10,
+                          initialBookData?.file_url || initialBookData?.fileUrl || book.fileUrl
+                        )
                         setLoggedPortionsToday(prev => prev + 1)
                         if (isQuranBook) {
-                          alert(`MashAllah! Recitation of Rub el Juz ${quranRobaNumber} recorded (+1 Roba synced to your assignment tracker)!`)
+                          alert(`MashAllah! Recitation of Juz ${Math.ceil(quranRobaNumber / 4)} • Roba ${((quranRobaNumber - 1) % 4) + 1} recorded (+1 Roba synced to your assignment tracker)!`)
                           if (quranRobaNumber < 120) {
                             setQuranRobaNumber(prev => prev + 1)
                           } else {
@@ -950,7 +973,7 @@ The book is widely considered one of the most important works in the Islamic wor
               <div className="bg-gray-50 dark:bg-[#0a0a0a] p-4 border-t border-black/5 dark:border-white/10 flex items-center justify-between text-xs font-bold text-gray-500 shrink-0 font-sans">
                 <span>
                   {isQuranBook 
-                    ? `Rub el Juz ${quranRobaNumber} of 120 (Juz ${Math.ceil(quranRobaNumber / 4)}) • (${loggedPortionsToday} Robas read today)`
+                    ? `Juz ${Math.ceil(quranRobaNumber / 4)} • Roba ${((quranRobaNumber - 1) % 4) + 1} of 4 (Overall Rub #{quranRobaNumber} of 120) • (${loggedPortionsToday} Robas read today)`
                     : `Page ${book.completedPages + (loggedPortionsToday * 5)} of ${book.pages}`}
                 </span>
                 <div className="flex items-center gap-4">

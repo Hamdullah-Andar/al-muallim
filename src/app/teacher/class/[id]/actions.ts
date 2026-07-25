@@ -16,11 +16,20 @@ export async function createAssignment(formData: FormData) {
   const trackingType = formData.get('trackingType') as string
   
   // Build the dynamic JSONB content based on the tracking type
-  let content = {}
+  let content: any = {}
   if (trackingType === 'counter') {
     content = {
-      target: parseInt(formData.get('target') as string),
-      unit: formData.get('unit') as string
+      target: parseInt(formData.get('target') as string) || 1,
+      unit: (formData.get('unit') as string) || 'Times',
+      linkedBookId: (formData.get('linkedBookId') as string) || null,
+      externalUrl: (formData.get('externalUrl') as string) || null
+    }
+  } else if (trackingType === 'percentage') {
+    content = {
+      target: 0,
+      unit: '%',
+      startValue: 100,
+      trackingType: 'percentage'
     }
   }
 
@@ -32,7 +41,7 @@ export async function createAssignment(formData: FormData) {
         class_id: classId,
         category,
         title,
-        tracking_type: trackingType,
+        tracking_type: trackingType === 'percentage' ? 'counter' : trackingType,
         content,
         is_daily: true // Automatically regenerates every day!
       }
@@ -131,4 +140,36 @@ export async function deleteClassBook(bookId: string, classId: string) {
 
   revalidatePath(`/teacher/class/${classId}`)
   revalidatePath('/student/library')
+}
+
+export async function toggleClassActiveStatus(classId: string, isActive: boolean) {
+  const supabase = await createClient()
+  
+  // Verify authentication
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authorized")
+
+  // Ensure the user owns this class
+  const { data: classData } = await supabase
+    .from('classes')
+    .select('teacher_id')
+    .eq('id', classId)
+    .single()
+    
+  if (classData?.teacher_id !== user.id) {
+    throw new Error("Not authorized to modify this class")
+  }
+
+  const { error } = await supabase
+    .from('classes')
+    .update({ is_active: isActive })
+    .eq('id', classId)
+
+  if (error) {
+    console.error('Update Class Status Error:', error)
+    throw new Error('Failed to update class status')
+  }
+
+  revalidatePath(`/teacher/class/${classId}`)
+  revalidatePath('/teacher/dashboard')
 }

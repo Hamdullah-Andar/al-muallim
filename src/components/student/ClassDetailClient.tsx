@@ -2,7 +2,8 @@
 
 import React, { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { logZikrSession, togglePrayer } from '@/app/student/class/[id]/actions'
+import { useRouter } from 'next/navigation'
+import { logZikrSession, togglePrayer, logExtraReadingSession } from '@/app/student/class/[id]/actions'
 
 // Helper to determine if a prayer time has arrived (simplified logic)
 const isPrayerTimeAllowed = (prayerName: string) => {
@@ -31,6 +32,7 @@ export default function ClassDetailClient({
   studentId: string
 }) {
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
   
   // State for optimistic UI
   const [progressState, setProgressState] = useState(initialProgress)
@@ -40,6 +42,13 @@ export default function ClassDetailClient({
   const [selectedZikrId, setSelectedZikrId] = useState('')
   const [zikrCount, setZikrCount] = useState<number | ''>('')
   const [zikrDate, setZikrDate] = useState(new Date().toISOString().slice(0, 16))
+
+  // Reading Modal State
+  const [isReadingModalOpen, setIsReadingModalOpen] = useState(false)
+  const [selectedReadingId, setSelectedReadingId] = useState('')
+  const [readingExtraCount, setReadingExtraCount] = useState<number | ''>(1)
+  const [readingDate, setReadingDate] = useState(new Date().toISOString().slice(0, 16))
+  const [readingNotes, setReadingNotes] = useState('')
 
   // Find Prayer Assignment
   const prayerAssignment = initialAssignments.find(a => a.category === 'Prayer')
@@ -61,8 +70,12 @@ export default function ClassDetailClient({
     }
   }
 
-  // Zikr Assignments
+  // Zikr & Reading Assignments
   const zikrAssignments = initialAssignments.filter(a => a.category === 'Zikr')
+  const readingAssignments = initialAssignments.filter(a => {
+    const titleLower = (a.title || '').toLowerCase()
+    return a.category === 'Reading' || a.content?.linkedBookId || a.linked_book_id || titleLower.includes('quran') || titleLower.includes('recit') || titleLower.includes('reading')
+  })
 
   // Calculate aggregates
   const totalPrayersTracked = progressState
@@ -121,6 +134,7 @@ export default function ClassDetailClient({
 
       // Await the server action so the transition covers the revalidatePath network request
       await togglePrayer(studentId, prayerAssignment.id, prayerName, isChecked, todayDateStr, classData.id)
+      router.refresh()
     })
   }
 
@@ -142,10 +156,34 @@ export default function ClassDetailClient({
 
       // Await the server action
       await logZikrSession(studentId, selectedZikrId, count, dateStr, classData.id)
+      router.refresh()
     })
 
     setIsZikrModalOpen(false)
     setZikrCount('')
+  }
+
+  const handleLogExtraReading = () => {
+    if (!selectedReadingId || !readingExtraCount) return
+    const count = Number(readingExtraCount)
+    const dateStr = readingDate.split('T')[0]
+
+    startTransition(async () => {
+      setProgressState(prev => {
+        const exists = prev.find(p => p.assignment_id === selectedReadingId && p.tracking_date === dateStr)
+        if (exists) {
+          return prev.map(p => p.id === exists.id ? { ...p, completed_value: (p.completed_value || 0) + count } : p)
+        }
+        return [...prev, { assignment_id: selectedReadingId, tracking_date: dateStr, completed_value: count }]
+      })
+
+      await logExtraReadingSession(studentId, selectedReadingId, count, dateStr, classData.id)
+      router.refresh()
+    })
+
+    setIsReadingModalOpen(false)
+    setReadingExtraCount(1)
+    setReadingNotes('')
   }
 
   // Bonus Zikr Message Logic
@@ -280,21 +318,110 @@ export default function ClassDetailClient({
               </div>
 
               {/* Current Reading Card */}
-              <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5 flex flex-col">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-full bg-[#bdf3df]/40 flex items-center justify-center text-[#092B2B]">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+              <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-[#bdf3df]/40 flex items-center justify-center text-[#092B2B] dark:text-emerald-400">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                      </div>
+                      <span className="text-[11px] font-black tracking-widest text-[#092B2B] dark:text-emerald-400 uppercase">CURRENT READING</span>
+                    </div>
+                    {readingAssignments.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedReadingId(readingAssignments[0]?.id || '')
+                          setIsReadingModalOpen(true)
+                        }}
+                        className="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 font-bold text-xs px-3.5 py-2 rounded-xl border border-emerald-500/30 transition-all active:scale-95 flex items-center gap-1 shadow-sm"
+                        title="Log extra reading portion"
+                      >
+                        <span>+ Log Extra</span>
+                      </button>
+                    )}
                   </div>
-                  <span className="text-[11px] font-black tracking-widest text-[#092B2B] dark:text-emerald-400 uppercase">CURRENT READING</span>
-                </div>
-                
-                <h4 className="text-lg font-bold mb-1 text-[#092B2B] dark:text-white">Tuhfat al-Atfal</h4>
-                <p className="text-sm opacity-70 mb-auto leading-relaxed">Rules of Noon Sakina • Pages 24 - 38</p>
+                  
+                  {readingAssignments.length > 0 ? (
+                    <div className="space-y-4 mb-6">
+                      {readingAssignments.map(ra => {
+                        const target = ra.content?.target || ra.target_count || 1
+                        const unit = ra.content?.unit || ra.unit || 'Roba'
+                        const prog = progressState.find(p => p.assignment_id === ra.id && p.tracking_date === todayDateStr)
+                        const completed = prog?.completed_value || 0
+                        const startingPoint = prog?.starting_point || 1
+                        const pct = Math.min(100, Math.round((completed / target) * 100))
+                        
+                        let formattedPoint = `${unit} #${startingPoint}`
+                        if (unit.toLowerCase() === 'roba') {
+                          const j = Math.ceil(startingPoint / 4)
+                          const r = ((startingPoint - 1) % 4) + 1
+                          formattedPoint = `Juz ${j} • Roba #${r}`
+                        }
 
-                <button className="w-full mt-8 bg-[#bdf3df] hover:bg-[#a6eed3] text-[#092B2B] font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-colors">
-                  Open Digital Book
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
-                </button>
+                        const linked = ra.content?.linkedBookId || ra.linked_book_id
+                        const param = `?assignmentId=${ra.id}&startRoba=${startingPoint}`
+                        let readUrl = `/student/library/quran${param}`
+                        if (linked && linked !== 'quran' && linked !== 'external') readUrl = `/student/library/${linked}${param}`
+                        if ((ra.title || '').toLowerCase().includes('tafsir')) readUrl = `/student/library/7${param}`
+
+                        return (
+                          <div key={ra.id} className="p-4 rounded-2xl bg-gray-50 dark:bg-white/5 border border-black/5 dark:border-white/5 space-y-3">
+                            <div className="flex justify-between items-start gap-2">
+                              <div>
+                                <h4 className="text-sm font-bold text-[#092B2B] dark:text-white leading-tight">{ra.title}</h4>
+                                <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-semibold mt-1">✨ Starting: <span className="font-mono underline">{formattedPoint}</span></p>
+                              </div>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                {completed > target && (
+                                  <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/40 px-1.5 py-0.5 rounded-full uppercase">
+                                    +{completed - target} Extra
+                                  </span>
+                                )}
+                                <span className="text-[11px] font-black">
+                                  {completed} / {target} <span className="text-[10px] font-normal opacity-70">{unit}</span>
+                                </span>
+                              </div>
+                            </div>
+                            <div className="w-full bg-[#e6ecea] dark:bg-white/10 rounded-full h-1.5 overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-500 bg-[#092B2B] dark:bg-emerald-400" style={{ width: `${pct}%` }}></div>
+                            </div>
+                            <div className="flex justify-between items-center pt-1">
+                              <Link
+                                href={readUrl}
+                                className="text-xs font-bold text-[#092B2B] dark:text-emerald-400 hover:underline flex items-center gap-1"
+                              >
+                                <span>Open Digital Book / Reader ›</span>
+                              </Link>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedReadingId(ra.id)
+                                  setIsReadingModalOpen(true)
+                                }}
+                                className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 border border-emerald-500/20"
+                              >
+                                <span>+ Log Extra</span>
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div>
+                      <h4 className="text-lg font-bold mb-1 text-[#092B2B] dark:text-white">Tuhfat al-Atfal</h4>
+                      <p className="text-sm opacity-70 mb-auto leading-relaxed">Rules of Noon Sakina • Pages 24 - 38</p>
+                    </div>
+                  )}
+                </div>
+
+                {readingAssignments.length === 0 && (
+                  <button className="w-full mt-8 bg-[#bdf3df] hover:bg-[#a6eed3] text-[#092B2B] font-bold py-3.5 rounded-2xl flex items-center justify-center gap-2 transition-colors">
+                    Open Digital Book
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                  </button>
+                )}
               </div>
 
             </div>
@@ -303,53 +430,56 @@ export default function ClassDetailClient({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
               {/* Daily Prayer Tracker */}
-              <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5 relative">
-                {isPending && <div className="absolute inset-0 bg-white/50 dark:bg-black/50 z-10 rounded-[32px]"></div>}
-                
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center gap-3">
-                    <svg className="w-6 h-6 text-[#092B2B] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                    <h3 className="text-xl font-bold text-[#092B2B] dark:text-white leading-tight">Daily<br/>Prayer</h3>
+              {prayerAssignment && (
+                <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5 relative">
+                  {isPending && <div className="absolute inset-0 bg-white/50 dark:bg-black/50 z-10 rounded-[32px]"></div>}
+                  
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-center gap-3">
+                      <svg className="w-6 h-6 text-[#092B2B] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      <h3 className="text-xl font-bold text-[#092B2B] dark:text-white leading-tight">Daily<br/>Prayer</h3>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-[11px] font-bold opacity-60">Today,</span>
+                      <span className="block text-xs font-black">{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="block text-[11px] font-bold opacity-60">Today,</span>
-                    <span className="block text-xs font-black">{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
-                  </div>
-                </div>
 
-                <div className="space-y-3">
-                  {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((prayerName) => {
-                    const completed = !!prayerData[prayerName]
-                    const allowed = isPrayerTimeAllowed(prayerName)
-                    
-                    return (
-                      <button 
-                        key={prayerName} 
-                        onClick={() => handlePrayerToggle(prayerName)}
-                        className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border-2 ${
-                          completed 
-                            ? 'bg-[#f0f9f5] border-[#bdf3df]/50 dark:bg-emerald-900/10 dark:border-emerald-500/20' 
-                            : allowed 
-                              ? 'bg-[#fbfbfb] border-transparent hover:border-black/5 dark:bg-white/5 dark:hover:border-white/10'
-                              : 'bg-gray-50 border-transparent opacity-50 cursor-not-allowed dark:bg-white/5'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className={`font-bold ${completed ? 'text-[#092B2B] dark:text-emerald-400' : 'opacity-70'}`}>{prayerName}</span>
-                          {!allowed && <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7a4 4 0 00-8 0v4h8z" /></svg>}
-                        </div>
-                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                          completed 
-                            ? 'bg-[#092B2B] border-[#092B2B] dark:bg-emerald-500 dark:border-emerald-500 text-white' 
-                            : 'border-black/20 dark:border-white/20'
-                        }`}>
-                          {completed && <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                        </div>
-                      </button>
-                    )
-                  })}
+                  <div className="space-y-3">
+                    {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((prayerName) => {
+                      const completed = !!prayerData[prayerName]
+                      const allowed = isPrayerTimeAllowed(prayerName)
+                      
+                      return (
+                        <button 
+                          key={prayerName} 
+                          onClick={() => handlePrayerToggle(prayerName)}
+                          className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border-2 ${
+                            completed 
+                              ? 'bg-[#f0f9f5] border-[#bdf3df]/50 dark:bg-emerald-900/10 dark:border-emerald-500/20' 
+                              : allowed 
+                                ? 'bg-[#fbfbfb] border-transparent hover:border-black/5 dark:bg-white/5 dark:hover:border-white/10'
+                                : 'bg-gray-50 border-transparent opacity-50 cursor-not-allowed dark:bg-white/5'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`font-bold ${completed ? 'text-[#092B2B] dark:text-emerald-400' : 'opacity-70'}`}>{prayerName}</span>
+                            {!allowed && <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7a4 4 0 00-8 0v4h8z" /></svg>}
+                          </div>
+                          <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                            completed 
+                              ? 'bg-[#092B2B] border-[#092B2B] dark:bg-emerald-500 dark:border-emerald-500 text-white' 
+                              : 'border-black/20 dark:border-white/20'
+                          }`}>
+                            {completed && <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
+
 
               {/* Assigned Zikr */}
               <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5">
@@ -516,6 +646,108 @@ export default function ClassDetailClient({
                   className="flex-1 bg-[#092B2B] dark:bg-emerald-500 text-white rounded-2xl font-bold shadow-lg shadow-black/10 hover:shadow-black/20 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:cursor-not-allowed"
                 >
                   {isPending ? 'Logging...' : 'Log Session'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* READING EXTRA MODAL */}
+        {isReadingModalOpen && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-[#111] rounded-[32px] w-full max-w-md p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">
+              <button 
+                onClick={() => setIsReadingModalOpen(false)}
+                className="absolute top-6 right-6 p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors opacity-60 hover:opacity-100"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+
+              <div className="flex items-center gap-3 mb-8">
+                <svg className="w-6 h-6 text-[#092B2B] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                <h2 className="text-2xl font-bold text-[#092B2B] dark:text-white">Log Extra Reading</h2>
+              </div>
+
+              <div className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold opacity-70 mb-2">Reading Assignment</label>
+                  <div className="relative">
+                    <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                    <select 
+                      value={selectedReadingId}
+                      onChange={(e) => setSelectedReadingId(e.target.value)}
+                      className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-black/10 rounded-xl py-3 pl-11 pr-4 text-sm font-medium appearance-none"
+                    >
+                      <option value="" disabled>Select Reading...</option>
+                      {readingAssignments.map(ra => (
+                        <option key={ra.id} value={ra.id}>{ra.title}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold opacity-70 mb-2">Extra Count ({readingAssignments.find(a => a.id === selectedReadingId)?.content?.unit || 'Roba'})</label>
+                    <div className="relative">
+                      <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                      <input 
+                        type="number" 
+                        min="1"
+                        value={readingExtraCount}
+                        onChange={(e) => setReadingExtraCount(e.target.value === '' ? '' : Number(e.target.value))}
+                        className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-black/10 rounded-xl py-3 pl-11 pr-4 text-sm font-medium"
+                        placeholder="1"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold opacity-70 mb-2">Date & Time</label>
+                    <div className="relative">
+                      <svg className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <input 
+                        type="datetime-local" 
+                        value={readingDate}
+                        onChange={(e) => setReadingDate(e.target.value)}
+                        className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-black/10 rounded-xl py-3 pl-11 pr-4 text-sm font-medium"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 p-4 rounded-xl flex gap-3 animate-in slide-in-from-top-2">
+                  <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                  <p className="text-xs leading-relaxed font-medium">
+                    MashAllah! Logging extra reading ({readingExtraCount || 0} {readingAssignments.find(a => a.id === selectedReadingId)?.content?.unit || 'Roba'}) will be recorded in your reading tracker and advance your starting point.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold opacity-70 mb-2">Notes / Reflections (Optional)</label>
+                  <textarea 
+                    value={readingNotes}
+                    onChange={(e) => setReadingNotes(e.target.value)}
+                    className="w-full bg-gray-50 dark:bg-white/5 border border-transparent focus:border-black/10 rounded-xl p-4 text-sm font-medium resize-none h-24"
+                    placeholder="Any reflections or notes on the verses read?"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-4 pt-4 mt-4">
+                <button 
+                  type="button"
+                  onClick={() => setIsReadingModalOpen(false)}
+                  className="flex-1 py-4 rounded-2xl font-bold bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleLogExtraReading}
+                  disabled={!readingExtraCount || Number(readingExtraCount) <= 0 || isPending}
+                  className="flex-1 py-4 rounded-2xl font-bold bg-[#092B2B] hover:bg-emerald-950 text-white transition-all shadow-lg shadow-[#092B2B]/20 disabled:opacity-50 text-sm flex items-center justify-center gap-2"
+                >
+                  <span>{isPending ? 'Saving...' : 'Save Extra Reading'}</span>
                 </button>
               </div>
             </div>

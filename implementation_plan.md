@@ -229,3 +229,34 @@ Because the Student UI relies on specialized, hard-coded widgets for Munkarat an
 - When a teacher creates a "Prayer" assignment, the title will automatically lock to "Five time Jamat prayer".
 - The tracking configurations (checkbox vs target) will be hidden from the teacher to guarantee the database receives the correct format that the Student widgets expect.
 - The `student_progress` database table has been upgraded with a `progress_data JSONB` column to securely hold complex multi-value data (like the 5 independent percentages for Munkarat).
+
+## Phase 8: Syncing, Archiving, and Layout Polish
+
+Following the Dashboard Redesign, several crucial backend and layout improvements were added to finalize the phase:
+
+### 1. Multi-Class Prayer Synchronization
+- **Issue:** A student marking a prayer as complete in one class wasn't syncing to other classes they were enrolled in.
+- **Solution:** Upgraded `togglePrayerMask` to fetch all active prayer assignments across a student's enrolled classes. Marking a prayer now performs an array-based UPSERT to keep progress consistent across every class.
+- **UI Logic:** The Daily Prayers card is now conditionally rendered only if the student has a valid prayer assignment.
+
+### 2. Student Dashboard Two-Column Sorting
+- **Layout Update:** Modified the student dashboard (`src/app/student/dashboard/page.tsx`) to display non-prayer assignments chronologically from left to right.
+- **Logic:** Assignments are fetched and sorted globally by `created_at` (ascending). They are then cleanly split into `leftAssignments` (1st, 3rd, 5th...) and `rightAssignments` (2nd, 4th, 6th...).
+
+### 3. Class Archiving System (is_active)
+- **Database:** Created `04_add_is_active_to_classes.sql` to add an `is_active` boolean column to the `classes` table with a default of `true`.
+- **Teacher UI:** Added an "Archive Class / Unarchive Class" button to `ClassDetailClient.tsx` so teachers can safely hide past semesters without losing historical data.
+- **Student Dashboard:** Filtered out archived classes (`is_active === false`) from the active assignments fetcher so past assignments do not clutter the dashboard. The Prayer sync logic was also updated to only target active classes.
+
+## Phase 9: Digital Library & Linked Progress Tracking
+
+While working on the academic assignment features, we built a full Digital Library system to host course materials (PDFs) and dynamically sync reading assignments with the student's current page.
+
+### 1. Class Books & PDF Uploads
+- **Database:** Executed `02_class_books.sql` to create the `books` table.
+- **Storage:** Configured a Supabase Storage bucket (`library-pdfs`) to host course materials.
+- **Teacher UI:** Integrated a robust file upload modal into `ClassDetailClient.tsx` that bypasses Next.js server limits by uploading directly from the client to Supabase Storage, and then saves the public URL via `uploadClassBook` in `actions.ts`.
+
+### 2. Book Progress Tracking
+- **Database:** Executed `03_book_progress.sql` to create the `book_progress` table, allowing each student to have an independent bookmark for every uploaded book.
+- **Student Dashboard:** Upgraded `AcademicTaskCard.tsx` and the dashboard data fetcher (`page.tsx`) to calculate a dynamic `starting_point`. If a teacher assigns "Read 10 pages" and the student is currently on page 45, the tracker automatically displays "Read from page 46".

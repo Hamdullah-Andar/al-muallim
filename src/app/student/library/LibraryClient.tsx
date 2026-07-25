@@ -194,9 +194,17 @@ interface LibraryClientProps {
   user: any
   profile: any
   initialResources?: any[]
+  bookProgress?: any[]
+  studentProgress?: any[]
 }
 
-export default function LibraryClient({ user, profile, initialResources = [] }: LibraryClientProps) {
+export default function LibraryClient({
+  user,
+  profile,
+  initialResources = [],
+  bookProgress = [],
+  studentProgress = []
+}: LibraryClientProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('All Resources')
@@ -235,6 +243,96 @@ export default function LibraryClient({ user, profile, initialResources = [] }: 
     }
     return DEFAULT_RESOURCES
   }, [initialResources])
+
+  // Dynamically pick the featured book: prioritize recently teacher-uploaded class books, fallback to Marvels of Creation
+  const featuredBook = useMemo(() => {
+    const uploaded = allResources.find(r => r.file_url && r.id !== 'quran')
+    if (uploaded) return uploaded
+    return DEFAULT_RESOURCES.find(r => r.id === 'feat-1') || DEFAULT_RESOURCES[1]
+  }, [allResources])
+
+  // Dynamically compute continue reading list based on live student progress & uploaded class books
+  const continueReadingList = useMemo(() => {
+    const list: any[] = []
+    const seenIds = new Set<string>()
+
+    // 1. Add active books read from bookProgress
+    if (bookProgress && bookProgress.length > 0) {
+      bookProgress.forEach((bp: any) => {
+        if (!seenIds.has(bp.book_id)) {
+          seenIds.add(bp.book_id)
+          const matchedResource = allResources.find(r => r.id === bp.book_id)
+          const pages = bp.total_pages || matchedResource?.pages || 100
+          const percent = Math.min(100, Math.round(((bp.current_page || 1) / pages) * 100))
+          list.push({
+            id: bp.book_id,
+            title: bp.book_title || matchedResource?.title || 'Active Reading Book',
+            author: matchedResource?.author || 'Class Resource',
+            percent,
+            pagesStr: `${bp.current_page || 1}/${pages} pages`,
+            coverColor: matchedResource?.coverColor || 'from-[#193a2c] to-[#0c1f17]',
+            textColor: 'text-white'
+          })
+        }
+      })
+    }
+
+    // 2. Add assignments where student has progress > 0
+    if (studentProgress && studentProgress.length > 0) {
+      studentProgress.forEach((sp: any) => {
+        const pdata = sp.progress_data || {}
+        const bId = pdata.book_id || sp.assignment_id
+        if (sp.completed_value > 0 && bId && !seenIds.has(bId)) {
+          seenIds.add(bId)
+          const matchedResource = allResources.find(r => r.id === bId)
+          const target = sp.target_count || 10
+          const percent = Math.min(100, Math.round((sp.completed_value / target) * 100))
+          list.push({
+            id: bId,
+            title: pdata.book_title || matchedResource?.title || 'Assigned Book',
+            author: matchedResource?.author || 'Class Instructor',
+            percent,
+            pagesStr: `${sp.completed_value} portions read`,
+            coverColor: matchedResource?.coverColor || 'from-[#0d3b2c] to-[#061d15]',
+            textColor: 'text-emerald-100'
+          })
+        }
+      })
+    }
+
+    // 3. Add any custom teacher-uploaded books so students immediately see them in Continue Reading
+    allResources.forEach(r => {
+      if (r.file_url && r.id !== 'quran' && !seenIds.has(r.id)) {
+        seenIds.add(r.id)
+        list.push({
+          id: r.id,
+          title: r.title,
+          author: r.author,
+          percent: 5,
+          pagesStr: 'Class Uploaded • Start',
+          coverColor: 'from-[#1b3d2f] to-[#0d2219]',
+          textColor: 'text-white'
+        })
+      }
+    })
+
+    // 4. Fill up to 4 items with standard defaults if needed
+    const defaults = [
+      { id: 'quran', title: 'The Holy Quran', author: 'Quran.com Live API', percent: 25, pagesStr: 'Rub el Juz Active', coverColor: 'from-[#0d3b2c] to-[#061d15]', textColor: 'text-emerald-100' },
+      { id: 'cont-fiqh', title: 'Fiqh Simplified', author: 'Dr. Ahmed Ibrahim', percent: 68, pagesStr: '134/190 pages', coverColor: 'from-[#e9dfcb] to-[#cfc0a1]', textColor: 'text-gray-800 dark:text-white' },
+      { id: 'cont-history', title: 'History of the Caliphs', author: 'Ustadh Sulaiman', percent: 12, pagesStr: '45/380 pages', coverColor: 'from-[#2e3b4e] to-[#141d2b]', textColor: 'text-white' },
+      { id: 'cont-tafsir', title: 'Gems of Tafsir', author: 'Shaykh Hassan Al-Banna', percent: 88, pagesStr: '312/355 pages', coverColor: 'from-[#ded2b8] to-[#bfac85]', textColor: 'text-gray-800 dark:text-white' }
+    ]
+
+    defaults.forEach(d => {
+      if (!seenIds.has(d.id) && list.length < 4) {
+        seenIds.add(d.id)
+        list.push(d)
+      }
+    })
+
+    return list.slice(0, 4)
+  }, [bookProgress, studentProgress, allResources])
 
   // Categories list with counts
   const categoryCounts = useMemo(() => {
@@ -345,18 +443,18 @@ export default function LibraryClient({ user, profile, initialResources = [] }: 
           <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
             <div className="md:col-span-7 space-y-5">
               <span className="inline-block bg-white/10 text-emerald-300 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full">
-                FEATURED RESOURCE
+                {featuredBook.badgeText || 'FEATURED RESOURCE'}
               </span>
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
-                The Marvels of Creation: Foundations of Islamic Science
+                {featuredBook.title}
               </h2>
               <p className="text-emerald-100/80 text-sm leading-relaxed max-w-xl">
-                Discover the intersection of faith and intellect in this comprehensive volume covering the history of scientific discovery in the Islamic world.
+                {featuredBook.description || 'Discover the intersection of faith and intellect in this comprehensive volume provided for your class study and spiritual refinement.'}
               </p>
               <div className="flex items-center gap-4 pt-2">
                 <button
                   type="button"
-                  onClick={() => handleOpenBook('feat-1')}
+                  onClick={() => handleOpenBook(featuredBook.id)}
                   className="bg-white text-[#092B2B] hover:bg-emerald-50 font-bold px-6 py-3 rounded-2xl text-xs flex items-center gap-2 transition-all shadow-md"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -366,7 +464,7 @@ export default function LibraryClient({ user, profile, initialResources = [] }: 
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleOpenBook('feat-1')}
+                  onClick={() => handleOpenBook(featuredBook.id)}
                   className="bg-white/10 hover:bg-white/20 text-white font-bold px-6 py-3 rounded-2xl text-xs transition-all border border-white/15"
                 >
                   View Details
@@ -381,13 +479,13 @@ export default function LibraryClient({ user, profile, initialResources = [] }: 
                   <div className="w-6 h-6 rounded-full border border-amber-300/60 flex items-center justify-center mb-1">
                     <span className="text-[8px] font-bold text-amber-300">نور</span>
                   </div>
-                  <p className="text-[9px] font-black text-amber-200 uppercase tracking-tight leading-tight">ISLAMIC SCIENCE</p>
+                  <p className="text-[9px] font-black text-amber-200 uppercase tracking-tight leading-tight line-clamp-1">{featuredBook.category || 'LIBRARY'}</p>
                   <div className="w-8 h-0.5 bg-amber-400/50 my-1"></div>
-                  <p className="text-[7px] text-emerald-200">Foundations</p>
+                  <p className="text-[7px] text-emerald-200 line-clamp-1">{featuredBook.author || 'Instructor'}</p>
                 </div>
                 <div className="space-y-1.5 overflow-hidden">
-                  <p className="text-xs font-bold text-white leading-tight">The Marvels of Creation</p>
-                  <p className="text-[10px] text-emerald-200/80">Faith & Scientific Discovery</p>
+                  <p className="text-xs font-bold text-white leading-tight line-clamp-2">{featuredBook.title}</p>
+                  <p className="text-[10px] text-emerald-200/80 line-clamp-1">{featuredBook.author || 'Class Instructor'}</p>
                   <div className="w-16 h-1.5 bg-white/20 rounded-full overflow-hidden mt-2">
                     <div className="w-10 h-full bg-emerald-400 rounded-full"></div>
                   </div>
@@ -407,44 +505,7 @@ export default function LibraryClient({ user, profile, initialResources = [] }: 
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              {
-                id: 'quran',
-                title: 'The Holy Quran',
-                author: 'Quran.com Live API',
-                percent: 25,
-                pagesStr: 'Rub el Juz Active',
-                coverColor: 'from-[#0d3b2c] to-[#061d15]',
-                textColor: 'text-emerald-100'
-              },
-              {
-                id: 'cont-fiqh',
-                title: 'Fiqh Simplified',
-                author: 'Dr. Ahmed Ibrahim',
-                percent: 68,
-                pagesStr: '134/190 pages',
-                coverColor: 'from-[#e9dfcb] to-[#cfc0a1]',
-                textColor: 'text-gray-800 dark:text-white'
-              },
-              {
-                id: 'cont-history',
-                title: 'History of the Caliphs',
-                author: 'Ustadh Sulaiman',
-                percent: 12,
-                pagesStr: '45/380 pages',
-                coverColor: 'from-[#2e3b4e] to-[#141d2b]',
-                textColor: 'text-white'
-              },
-              {
-                id: 'cont-tafsir',
-                title: 'Gems of Tafsir',
-                author: 'Shaykh Hassan Al-Banna',
-                percent: 88,
-                pagesStr: '312/355 pages',
-                coverColor: 'from-[#ded2b8] to-[#bfac85]',
-                textColor: 'text-gray-800 dark:text-white'
-              }
-            ].map((item, idx) => (
+            {continueReadingList.map((item, idx) => (
               <div
                 key={item.id}
                 onClick={() => handleOpenBook(item.id)}

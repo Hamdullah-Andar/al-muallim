@@ -40,6 +40,12 @@ export default function AssignmentsClient({
     const prog = progressMap[assignment.id]
     if (!prog) return false
 
+    const unit = assignment.content?.unit || assignment.unit || ''
+    const isPercentage = unit === '%' || unit.toLowerCase() === 'percentage' || assignment.tracking_type === 'percentage' || assignment.content?.trackingType === 'percentage'
+    if (isPercentage) {
+      return prog.is_completed === true || (prog.completed_value === 0 && prog.is_completed === true)
+    }
+
     // Prayer bitmask check
     if (assignment.title?.toLowerCase().includes('prayer')) {
       const mask = prog.completed_value || 0
@@ -58,8 +64,16 @@ export default function AssignmentsClient({
   // Helper to get numeric progress info
   const getProgressInfo = (assignment: any) => {
     const prog = progressMap[assignment.id]
-    const completedVal = prog?.completed_value || 0
+    const unit = assignment.content?.unit || assignment.unit || (assignment.category === 'Reading' ? 'Ayat' : 'Times')
+    const isPercentage = unit === '%' || unit.toLowerCase() === 'percentage' || assignment.tracking_type === 'percentage' || assignment.content?.trackingType === 'percentage'
+    const completedVal = (prog?.completed_value !== undefined && prog?.completed_value !== null && !(isPercentage && prog?.completed_value === 0 && prog?.is_completed !== true))
+      ? prog.completed_value
+      : (isPercentage ? 100 : 0)
     
+    if (isPercentage) {
+      return { current: completedVal, target: 0, unit: '%' }
+    }
+
     if (assignment.title?.toLowerCase().includes('prayer')) {
       let count = 0
       const mask = completedVal
@@ -73,7 +87,6 @@ export default function AssignmentsClient({
 
     const target = assignment.content?.target || assignment.target_count || 0
     if (target > 0) {
-      const unit = assignment.content?.unit || assignment.unit || (assignment.category === 'Reading' ? 'Ayat' : 'Times')
       return { current: completedVal, target, unit }
     }
 
@@ -128,11 +141,12 @@ export default function AssignmentsClient({
   const getReadingLink = (assignment: any) => {
     const titleLower = (assignment.title || '').toLowerCase()
     const linked = assignment.content?.linkedBookId || assignment.linked_book_id
-    const param = `?assignmentId=${assignment.id}`
+    const startRoba = progressMap[assignment.id]?.starting_point || 1
+    const param = `?assignmentId=${assignment.id}&startRoba=${startRoba}`
     if (linked === 'quran' || titleLower.includes('quran') || titleLower.includes('recit') || titleLower.includes('surah') || titleLower.includes('juz') || titleLower.includes('ayah')) {
       return `/student/library/quran${param}`
     }
-    if (linked && linked !== 'quran') {
+    if (linked && linked !== 'quran' && linked !== 'external') {
       return `/student/library/${linked}${param}`
     }
     if (titleLower.includes('tafsir') || titleLower.includes('anwar')) return `/student/library/7${param}`
@@ -140,6 +154,24 @@ export default function AssignmentsClient({
     if (titleLower.includes('fiqh')) return `/student/library/cont-fiqh${param}`
     if (titleLower.includes('history') || titleLower.includes('caliph')) return `/student/library/cont-history${param}`
     return `/student/library/quran${param}`
+  }
+
+  const formatUnitAndPoint = (u: string, pt: number, isReadingItem: boolean = true) => {
+    if (u === '%' || u.toLowerCase() === 'percentage') {
+      return `${pt}%`
+    }
+    if (u.toLowerCase() === 'roba') {
+      const j = Math.ceil(pt / 4)
+      const r = ((pt - 1) % 4) + 1
+      return `Juz ${j} • Roba #${r}`
+    }
+    if (!isReadingItem && u.toLowerCase() === 'times') {
+      return `Day #${pt}`
+    }
+    if (!isReadingItem) {
+      return `Day #${pt}`
+    }
+    return `${u} #${pt}`
   }
 
   // Practical, clean list of categories for filtering
@@ -333,8 +365,13 @@ export default function AssignmentsClient({
                 const cls = classMap[assignment.class_id]
                 const completed = isAssignmentCompleted(assignment)
                 const progInfo = getProgressInfo(assignment)
-                const pct = progInfo.target > 0 ? Math.min(100, Math.round((progInfo.current / progInfo.target) * 100)) : 0
+                const isPct = progInfo.unit === '%' || progInfo.unit.toLowerCase() === 'percentage'
+                const pct = isPct ? Math.min(100, progInfo.current) : (progInfo.target > 0 ? Math.min(100, Math.round((progInfo.current / progInfo.target) * 100)) : 0)
                 const cat = getCategory(assignment)
+
+                const prog = progressMap[assignment.id]
+                const startingPoint = prog?.starting_point || 1
+                const externalUrl = assignment.content?.externalUrl || assignment.external_url || (assignment.content?.linkedBookId === 'external' ? assignment.content?.externalUrl : null)
 
                 return (
                   <div 
@@ -355,6 +392,16 @@ export default function AssignmentsClient({
                       <h3 className={`text-xl font-bold ${completed ? 'text-gray-400 line-through' : 'text-[#092B2B] dark:text-white'}`}>
                         {assignment.title}
                       </h3>
+
+                      {/* Starting Point Indicator */}
+                      {(cat === 'Reading' || assignment.content?.linkedBookId || assignment.linked_book_id) && (
+                        <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
+                          <span>✨ Today's Starting Point:</span>
+                          <span className="underline decoration-emerald-500/60 font-mono">
+                            {formatUnitAndPoint(progInfo.unit, startingPoint)}
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Middle & Right Column: Progress + Action Button */}
@@ -363,18 +410,30 @@ export default function AssignmentsClient({
                         <div className="flex justify-between text-xs font-bold mb-2">
                           <span className="text-gray-400">Progress</span>
                           <span className="text-[#092B2B] dark:text-gray-300">
-                            {progInfo.current} / {progInfo.target} {progInfo.unit}
+                            {progInfo.unit === '%' || progInfo.unit.toLowerCase() === 'percentage'
+                              ? `${progInfo.current}% → 0%`
+                              : `${progInfo.current} / ${progInfo.target} ${progInfo.unit}`}
                           </span>
                         </div>
                         <div className="w-full bg-[#edf1f4] dark:bg-gray-800 rounded-full h-2 overflow-hidden">
                           <div 
-                            className="h-full rounded-full transition-all duration-500 bg-[#064e3b] dark:bg-emerald-400"
-                            style={{ width: `${pct}%` }}
+                            className="h-full rounded-full transition-all duration-500"
+                            style={{ 
+                              width: `${pct}%`,
+                              backgroundColor: (progInfo.unit === '%' || progInfo.unit.toLowerCase() === 'percentage')
+                                ? (progInfo.current > 50 ? '#ef4444' : progInfo.current > 0 ? '#f97316' : '#22c55e')
+                                : '#064e3b'
+                            }}
                           ></div>
                         </div>
-                        {progInfo.current > progInfo.target && (
-                          <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-2 font-medium leading-relaxed">
-                            MashAllah! You've exceeded your goal. You have read {progInfo.current - progInfo.target} {progInfo.unit.toLowerCase()} extra.
+                        {((progInfo.unit !== '%' && progInfo.current > progInfo.target) || ((progInfo.unit === '%' || progInfo.unit.toLowerCase() === 'percentage') && progInfo.current === 0)) && (
+                          <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-2 font-bold truncate bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-xl border border-emerald-500/20 flex items-center gap-1.5">
+                            <span>🎉</span>
+                            <span className="truncate">
+                              {(progInfo.unit === '%' || progInfo.unit.toLowerCase() === 'percentage')
+                                ? `MashAllah! You reached 0% today!`
+                                : `MashAllah! Goal done (+${progInfo.current - progInfo.target} ${progInfo.unit.toLowerCase() === 'times' ? '' : progInfo.unit.toLowerCase() + ' '}extra) • Next: ${formatUnitAndPoint(progInfo.unit, startingPoint + progInfo.current, cat === 'Reading' || Boolean(assignment.content?.linkedBookId) || Boolean(assignment.linked_book_id))}`}
+                            </span>
                           </p>
                         )}
                       </div>
@@ -382,12 +441,23 @@ export default function AssignmentsClient({
                       {/* Action Button: Read Online & Go to Class */}
                       <div className="shrink-0 flex items-center gap-3">
                         {(cat === 'Reading' || assignment.content?.linkedBookId || assignment.linked_book_id) && !completed && (
-                          <Link
-                            href={getReadingLink(assignment)}
-                            className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-500/20 shadow-sm transition-all"
-                          >
-                            <span>Read Online ›</span>
-                          </Link>
+                          externalUrl ? (
+                            <a
+                              href={externalUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-500/20 shadow-sm transition-all"
+                            >
+                              <span>🔗 Open Book Link ›</span>
+                            </a>
+                          ) : (
+                            <Link
+                              href={getReadingLink(assignment)}
+                              className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-500/20 shadow-sm transition-all"
+                            >
+                              <span>Read Online ›</span>
+                            </Link>
+                          )
                         )}
                         {completed ? (
                           <div className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-xs bg-[#dcf5ea] text-[#0a6c4c] dark:bg-emerald-900/40 dark:text-emerald-300">

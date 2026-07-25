@@ -70,11 +70,32 @@ export default async function StudentLibraryPage() {
     file_url: b.file_url
   }))
 
+  // 3. Fetch student reading progress from book_progress and student_progress
+  let bookProgress: any[] = []
+  try {
+    const { data: bp } = await supabase
+      .from('book_progress')
+      .select('*')
+      .eq('student_id', user.id)
+      .order('last_read_at', { ascending: false })
+    if (bp) bookProgress = bp
+  } catch (err) {
+    // book_progress table might not exist if migration isn't run yet
+  }
+
+  const { data: studentProgress } = await supabase
+    .from('student_progress')
+    .select('*')
+    .eq('student_id', user.id)
+    .order('updated_at', { ascending: false })
+
   return (
     <LibraryClient
       user={user}
       profile={profile}
       initialResources={mappedResources}
+      bookProgress={bookProgress}
+      studentProgress={studentProgress || []}
     />
   )
 }

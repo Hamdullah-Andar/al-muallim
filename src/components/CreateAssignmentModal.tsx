@@ -14,8 +14,9 @@ export default function CreateAssignmentModal({
 }) {
   const [category, setCategory] = useState('Zikr')
   const [customCategory, setCustomCategory] = useState('')
-  const [trackingType, setTrackingType] = useState<'checkbox' | 'counter'>('counter')
-  const [readingSource, setReadingSource] = useState<'library' | 'quran'>('quran')
+  const [trackingType, setTrackingType] = useState<'checkbox' | 'counter' | 'percentage'>('counter')
+  const [readingSource, setReadingSource] = useState<'library' | 'quran' | 'link'>('quran')
+  const [externalUrl, setExternalUrl] = useState('')
   const [selectedBookId, setSelectedBookId] = useState('9')
   const [portionUnit, setPortionUnit] = useState('Ayah')
   const [isLoading, setIsLoading] = useState(false)
@@ -30,20 +31,31 @@ export default function CreateAssignmentModal({
     formData.append('classId', classId)
     
     // If the tracking type radios are hidden, we must append the state value manually!
-    if (category === 'Munkarat' || category === 'Prayer') {
+    if (category === 'Prayer') {
       formData.set('trackingType', trackingType)
     } else if (category === 'Reading') {
       formData.set('trackingType', 'counter')
       formData.set('target', (formData.get('readingTarget') || '1') as string)
       formData.set('unit', portionUnit)
-      formData.set('linkedBookId', readingSource === 'library' ? selectedBookId : 'quran')
+      formData.set('linkedBookId', readingSource === 'library' ? selectedBookId : readingSource === 'link' ? 'external' : 'quran')
+      if (readingSource === 'link') {
+        formData.set('externalUrl', externalUrl.trim())
+      }
       // Ensure title is descriptive if not customized
       if (!formData.get('title')) {
         const bookName = readingSource === 'library' 
           ? (selectedBookId === '9' ? 'Riyad as-Salihin' : selectedBookId === '7' ? 'Anwar ul-Quran / Tafsir' : 'Library Book')
+          : readingSource === 'link'
+          ? 'External Book Reading'
           : 'Holy Quran Recitation'
         formData.set('title', `${bookName} (${formData.get('readingTarget') || '1'} ${portionUnit} daily)`)
       }
+    } else if (trackingType === 'percentage' || category === 'Munkarat') {
+      formData.set('trackingType', 'percentage')
+      formData.set('target', '0')
+      formData.set('unit', '%')
+    } else {
+      formData.set('trackingType', trackingType)
     }
 
     // If they selected Custom, use their typed-in category name or fallback to 'Custom'
@@ -111,8 +123,10 @@ export default function CreateAssignmentModal({
               value={category}
               onChange={(e) => {
                 setCategory(e.target.value)
-                if (e.target.value === 'Prayer' || e.target.value === 'Munkarat') {
+                if (e.target.value === 'Prayer') {
                   setTrackingType('checkbox')
+                } else if (e.target.value === 'Munkarat') {
+                  setTrackingType('percentage')
                 } else if (e.target.value !== 'Custom' && e.target.value !== 'Reading') {
                   setTrackingType('counter')
                 }
@@ -141,13 +155,13 @@ export default function CreateAssignmentModal({
           {/* Step 2: Task Title */}
           <div>
             <label className="block text-sm font-bold mb-2 opacity-80">Task Title</label>
-            {(category === 'Munkarat' || category === 'Prayer') ? (
+            {category === 'Prayer' ? (
               <input 
                 key="readonly-title"
                 type="text" 
                 name="title"
                 readOnly
-                value={category === 'Munkarat' ? "Avoid five sense Munkarat" : "Five time Jamat prayer"}
+                value="Five time Jamat prayer"
                 className="w-full px-4 py-3 rounded-xl border border-black/10 dark:border-white/10 bg-black/5 dark:bg-white/5 opacity-70 cursor-not-allowed outline-none font-bold"
               />
             ) : (
@@ -157,6 +171,7 @@ export default function CreateAssignmentModal({
                 name="title"
                 required
                 placeholder={
+                  category === 'Munkarat' ? "e.g., Telling Lies Prevention or Avoid 5-Sense Munkarat" :
                   category === 'Zikr' ? "e.g., Astaghfirullah" : 
                   category === 'Reading' ? "e.g., Daily Recitation / Tafsir Portion" : 
                   "What exactly should they do?"
@@ -175,24 +190,33 @@ export default function CreateAssignmentModal({
               </div>
 
               {/* Source Radio Buttons */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setReadingSource('quran')}
-                  className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1 ${readingSource === 'quran' ? 'border-emerald-600 bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 font-bold' : 'border-black/5 dark:border-white/10 text-gray-600 dark:text-gray-400'}`}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 ${readingSource === 'quran' ? 'border-emerald-600 bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 font-bold' : 'border-black/5 dark:border-white/10 text-gray-600 dark:text-gray-400'}`}
                 >
-                  <span className="text-lg">📖</span>
-                  <span className="text-xs font-bold">Holy Quran Recitation</span>
-                  <span className="text-[10px] opacity-75">Quran.com / Hard Copy</span>
+                  <span className="text-base">📖</span>
+                  <span className="text-xs font-bold leading-tight">Quran</span>
+                  <span className="text-[9px] opacity-75 leading-tight">Quran.com</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setReadingSource('library')}
-                  className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1 ${readingSource === 'library' ? 'border-emerald-600 bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 font-bold' : 'border-black/5 dark:border-white/10 text-gray-600 dark:text-gray-400'}`}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 ${readingSource === 'library' ? 'border-emerald-600 bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 font-bold' : 'border-black/5 dark:border-white/10 text-gray-600 dark:text-gray-400'}`}
                 >
-                  <span className="text-lg">📚</span>
-                  <span className="text-xs font-bold">Academy Library Book</span>
-                  <span className="text-[10px] opacity-75">Tafsir, Hadith, Fiqh</span>
+                  <span className="text-base">📚</span>
+                  <span className="text-xs font-bold leading-tight">Library</span>
+                  <span className="text-[9px] opacity-75 leading-tight">Academy Book</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReadingSource('link')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 ${readingSource === 'link' ? 'border-emerald-600 bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 font-bold' : 'border-black/5 dark:border-white/10 text-gray-600 dark:text-gray-400'}`}
+                >
+                  <span className="text-base">🔗</span>
+                  <span className="text-xs font-bold leading-tight">Ext. Link</span>
+                  <span className="text-[9px] opacity-75 leading-tight">URL / Drive</span>
                 </button>
               </div>
 
@@ -209,6 +233,22 @@ export default function CreateAssignmentModal({
                       <option key={b.id} value={b.id}>{b.title}</option>
                     ))}
                   </select>
+                </div>
+              )}
+
+              {/* External Book Link Input */}
+              {readingSource === 'link' && (
+                <div>
+                  <label className="block text-xs font-bold mb-1.5 opacity-80">External Book / Document URL</label>
+                  <input
+                    type="url"
+                    value={externalUrl}
+                    onChange={e => setExternalUrl(e.target.value)}
+                    required
+                    placeholder="https://sunnah.com/riyadussalihin or Drive link..."
+                    className="w-full px-3 py-2.5 rounded-xl border border-emerald-500/30 bg-white dark:bg-black text-xs font-medium outline-none"
+                  />
+                  <p className="text-[10px] text-emerald-700 dark:text-emerald-400 mt-1 leading-relaxed">Saves storage! Students open link online/offline and mark progress when done.</p>
                 </div>
               )}
 
@@ -243,22 +283,28 @@ export default function CreateAssignmentModal({
             </div>
           )}
 
-          {/* Step 3: Tracking Type Selector (Hidden for Munkarat, Prayer, and Reading) */}
-          {category !== 'Munkarat' && category !== 'Prayer' && category !== 'Reading' && (
+          {/* Step 3: Tracking Type Selector (Hidden for Prayer and Reading) */}
+          {category !== 'Prayer' && category !== 'Reading' && (
             <div>
               <label className="block text-sm font-bold mb-3 opacity-80">How is this tracked?</label>
-              <div className="grid grid-cols-2 gap-4">
-                <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center text-center transition-all ${trackingType === 'counter' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
+              <div className="grid grid-cols-3 gap-3">
+                <label className={`cursor-pointer border-2 rounded-xl p-3 flex flex-col items-center text-center transition-all ${trackingType === 'counter' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
                   <input type="radio" name="trackingType" value="counter" checked={trackingType === 'counter'} onChange={() => setTrackingType('counter')} className="hidden" />
-                  <span className="text-2xl mb-2">🔢</span>
-                  <span className="font-bold text-sm">Target Number</span>
-                  <span className="text-xs opacity-60 mt-1">Has a specific count</span>
+                  <span className="text-2xl mb-1">🔢</span>
+                  <span className="font-bold text-xs">Target Number</span>
+                  <span className="text-[10px] opacity-60 mt-0.5">Has exact count</span>
                 </label>
-                <label className={`cursor-pointer border-2 rounded-xl p-4 flex flex-col items-center text-center transition-all ${trackingType === 'checkbox' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
+                <label className={`cursor-pointer border-2 rounded-xl p-3 flex flex-col items-center text-center transition-all ${trackingType === 'checkbox' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
                   <input type="radio" name="trackingType" value="checkbox" checked={trackingType === 'checkbox'} onChange={() => setTrackingType('checkbox')} className="hidden" />
-                  <span className="text-2xl mb-2">✅</span>
-                  <span className="font-bold text-sm">Done / Not Done</span>
-                  <span className="text-xs opacity-60 mt-1">Simple checkbox</span>
+                  <span className="text-2xl mb-1">✅</span>
+                  <span className="font-bold text-xs">Done / Not Done</span>
+                  <span className="text-[10px] opacity-60 mt-0.5">Simple checkbox</span>
+                </label>
+                <label className={`cursor-pointer border-2 rounded-xl p-3 flex flex-col items-center text-center transition-all ${trackingType === 'percentage' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
+                  <input type="radio" name="trackingType" value="percentage" checked={trackingType === 'percentage'} onChange={() => setTrackingType('percentage')} className="hidden" />
+                  <span className="text-2xl mb-1">📊</span>
+                  <span className="font-bold text-xs">Percentage (%)</span>
+                  <span className="text-[10px] opacity-60 mt-0.5">Reduce 100% → 0%</span>
                 </label>
               </div>
             </div>
