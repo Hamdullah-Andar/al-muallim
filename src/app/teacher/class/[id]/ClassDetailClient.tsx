@@ -398,7 +398,7 @@ export default function ClassDetailClient({ classData, students = [], assignment
               <h2 className="text-2xl font-bold">All Assignments ({assignments.length})</h2>
               <p className="text-sm opacity-60 font-medium mt-1">Create and manage daily tasks for this class.</p>
             </div>
-            <CreateAssignmentButton classId={classData.id} />
+            <CreateAssignmentButton classId={classData.id} books={books} />
           </div>
           <div className="space-y-4">
             {assignments.map(assignment => (
@@ -452,9 +452,14 @@ export default function ClassDetailClient({ classData, students = [], assignment
                       <p className="text-[9px] font-bold text-white leading-tight line-clamp-3">{book.title}</p>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="inline-block bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wide mb-1">
-                        {book.category || 'CLASS RESOURCE'}
-                      </span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="inline-block bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 text-[10px] font-extrabold px-2 py-0.5 rounded uppercase tracking-wide">
+                          {book.category || 'CLASS RESOURCE'}
+                        </span>
+                        <span className="inline-block bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">
+                          {book.file_url?.includes('supabase.co') ? '📄 PDF' : (book.id === 'quran' || !book.file_url) ? '⚡ API' : '🔗 LINK'}
+                        </span>
+                      </div>
                       <h3 className="font-bold text-base text-gray-900 dark:text-white truncate group-hover:text-emerald-600 transition-colors">
                         {book.title}
                       </h3>
@@ -469,12 +474,12 @@ export default function ClassDetailClient({ classData, students = [], assignment
 
                   <div className="flex items-center justify-between pt-3 border-t border-black/5 dark:border-white/5">
                     <a
-                      href={book.file_url}
+                      href={book.file_url || '#'}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
                     >
-                      <span>Preview PDF</span>
+                      <span>{book.file_url?.includes('supabase.co') ? 'Preview PDF' : 'Open Resource'}</span>
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
                     </a>
 

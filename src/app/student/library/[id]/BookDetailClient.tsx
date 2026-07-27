@@ -12,6 +12,7 @@ interface BookDetailClientProps {
   initialAssignmentId?: string | null
   initialStartRoba?: number | null
   initialBookData?: any
+  initialLoggedPortionsToday?: number
 }
 
 interface ChapterItem {
@@ -21,7 +22,7 @@ interface ChapterItem {
   status: 'completed' | 'current' | 'locked'
 }
 
-export default function BookDetailClient({ bookId, user, profile, initialAssignmentId, initialStartRoba, initialBookData }: BookDetailClientProps) {
+export default function BookDetailClient({ bookId, user, profile, initialAssignmentId, initialStartRoba, initialBookData, initialLoggedPortionsToday }: BookDetailClientProps) {
   const router = useRouter()
   const isQuranBook = bookId === 'quran' || bookId.toLowerCase().includes('quran') || Boolean(initialBookData?.title && initialBookData.title.toLowerCase().includes('quran'))
   
@@ -30,7 +31,7 @@ export default function BookDetailClient({ bookId, user, profile, initialAssignm
   const [activeTab, setActiveTab] = useState<'content' | 'overview' | 'notes'>('content')
   const [activeReaderChapter, setActiveReaderChapter] = useState<ChapterItem | null>(null)
   const [isSyncingLog, setIsSyncingLog] = useState<boolean>(false)
-  const [loggedPortionsToday, setLoggedPortionsToday] = useState<number>(0)
+  const [loggedPortionsToday, setLoggedPortionsToday] = useState<number>(initialLoggedPortionsToday || 0)
   const [quranRobaNumber, setQuranRobaNumber] = useState<number>(initialStartRoba || 1)
   const [quranVerses, setQuranVerses] = useState<any[]>([])
   const [isLoadingVerses, setIsLoadingVerses] = useState<boolean>(false)
@@ -532,24 +533,29 @@ The book is widely considered one of the most important works in the Islamic wor
 
                 <button
                   type="button"
-                  disabled={isSyncingLog}
-                  onClick={() => {
+                  disabled={isSyncingLog || loggedPortionsToday >= 1}
+                  onClick={async () => {
                     setIsSyncingLog(true)
-                    setTimeout(() => {
+                    try {
+                      await syncLibraryPortionRead(
+                        isQuranBook,
+                        bookId,
+                        initialAssignmentId || null,
+                        book.title,
+                        book.completedPages || 1,
+                        book.file_url || ''
+                      )
                       setLoggedPortionsToday(prev => prev + 1)
+                    } catch (error) {
+                      console.error('Failed to log portion', error)
+                    } finally {
                       setIsSyncingLog(false)
-                    }, 400)
+                    }
                   }}
-                  className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
+                  className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all active:scale-95"
                 >
-                  {isSyncingLog ? <span>Logging progress...</span> : <span>+ Log 1 Portion Read Today</span>}
+                  {isSyncingLog ? <span>Logging progress...</span> : <span>{loggedPortionsToday >= 1 ? 'Marked Done for Today' : '+ Log 1 Portion Read Today'}</span>}
                 </button>
-
-                {loggedPortionsToday > 1 && (
-                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-100/80 dark:bg-emerald-900/50 p-2.5 rounded-xl border border-emerald-500/30 animate-in fade-in slide-in-from-top-1">
-                    MashAllah! You've exceeded your goal. You have read {loggedPortionsToday - 1} portion(s) extra!
-                  </p>
-                )}
               </div>
             </div>
 

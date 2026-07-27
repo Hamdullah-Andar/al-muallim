@@ -19,40 +19,36 @@ export default async function StudentLibraryPage() {
     .eq('id', user.id)
     .single()
 
-  // 1. Fetch classes the student has joined
+  // 1. Fetch active classes the student has joined
   const { data: enrollments } = await supabase
     .from('class_students')
-    .select('class_id')
+    .select('class_id, classes!inner(is_active)')
     .eq('student_id', user.id)
+    .eq('classes.is_active', true)
 
   const classIds = enrollments?.map(e => e.class_id) || []
 
   // 2. Fetch books assigned to those classes or global books
-  let booksQuery = supabase.from('books').select('*').order('created_at', { ascending: false })
-  
-  // Try querying with class_id filter if the column exists in database
   let books: any[] = []
+  
   try {
     if (classIds.length > 0) {
-      const { data, error } = await booksQuery.or(`class_id.is.null,class_id.in.(${classIds.join(',')})`)
-      if (!error && data) {
-        books = data
-      } else if (error) {
-        const { data: fallbackData } = await supabase.from('books').select('*').order('created_at', { ascending: false })
-        if (fallbackData) books = fallbackData
-      }
+      const { data } = await supabase
+        .from('books')
+        .select('*')
+        .or(`class_id.is.null,class_id.in.(${classIds.join(',')})`)
+        .order('created_at', { ascending: false })
+      if (data) books = data
     } else {
-      const { data, error } = await booksQuery.is('class_id', null)
-      if (!error && data) {
-        books = data
-      } else if (error) {
-        const { data: fallbackData } = await supabase.from('books').select('*').order('created_at', { ascending: false })
-        if (fallbackData) books = fallbackData
-      }
+      const { data } = await supabase
+        .from('books')
+        .select('*')
+        .is('class_id', null)
+        .order('created_at', { ascending: false })
+      if (data) books = data
     }
   } catch (err) {
-    const { data: fallbackData } = await supabase.from('books').select('*').order('created_at', { ascending: false })
-    if (fallbackData) books = fallbackData
+    console.error("Error fetching library books:", err)
   }
 
   // If books were fetched from database, map them into initial resources format

@@ -46,6 +46,30 @@ export default async function StudentBookDetailPage({
     console.warn('Could not fetch book from books table by ID:', err)
   }
 
+  let initialLoggedPortionsToday = 0
+  if (assignmentId) {
+    const todayStr = new Date().toISOString().split('T')[0]
+    try {
+      const { data: prog } = await supabase
+        .from('student_progress')
+        .select('completed_value')
+        .eq('assignment_id', assignmentId)
+        .eq('student_id', user.id)
+        .eq('tracking_date', todayStr)
+        .single()
+        
+      if (prog) {
+        initialLoggedPortionsToday = prog.completed_value || 0
+      }
+    } catch (err) {
+      console.warn('Could not fetch today progress:', err)
+    }
+  } else {
+    // If no assignment ID, check book_progress table just to see if it was touched today?
+    // The previous implementation didn't have independent daily tracking without an assignment.
+    // For now, we will leave it as 0, or just rely on the assignments.
+  }
+
   return (
     <BookDetailClient
       bookId={id}
@@ -54,6 +78,7 @@ export default async function StudentBookDetailPage({
       initialAssignmentId={assignmentId}
       initialStartRoba={startRoba}
       initialBookData={initialBookData}
+      initialLoggedPortionsToday={initialLoggedPortionsToday}
     />
   )
 }

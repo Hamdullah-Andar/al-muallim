@@ -6,18 +6,20 @@ import { createAssignment } from '@/app/teacher/class/[id]/actions'
 export default function CreateAssignmentModal({ 
   isOpen, 
   setIsOpen,
-  classId
+  classId,
+  books = []
 }: { 
   isOpen: boolean, 
   setIsOpen: (v: boolean) => void,
-  classId: string
+  classId: string,
+  books?: any[]
 }) {
   const [category, setCategory] = useState('Zikr')
   const [customCategory, setCustomCategory] = useState('')
   const [trackingType, setTrackingType] = useState<'checkbox' | 'counter' | 'percentage'>('counter')
   const [readingSource, setReadingSource] = useState<'library' | 'quran' | 'link'>('quran')
   const [externalUrl, setExternalUrl] = useState('')
-  const [selectedBookId, setSelectedBookId] = useState('9')
+  const [selectedBookId, setSelectedBookId] = useState(books && books.length > 0 ? books[0].id : '')
   const [portionUnit, setPortionUnit] = useState('Ayah')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -43,11 +45,16 @@ export default function CreateAssignmentModal({
       }
       // Ensure title is descriptive if not customized
       if (!formData.get('title')) {
-        const bookName = readingSource === 'library' 
-          ? (selectedBookId === '9' ? 'Riyad as-Salihin' : selectedBookId === '7' ? 'Anwar ul-Quran / Tafsir' : 'Library Book')
-          : readingSource === 'link'
-          ? 'External Book Reading'
-          : 'Holy Quran Recitation'
+        let bookName = 'Library Book'
+        if (readingSource === 'library') {
+          const foundBook = books?.find(b => b.id === selectedBookId)
+          if (foundBook) bookName = foundBook.title
+        } else if (readingSource === 'link') {
+          bookName = 'External Book Reading'
+        } else {
+          bookName = 'Holy Quran Recitation'
+        }
+        
         formData.set('title', `${bookName} (${formData.get('readingTarget') || '1'} ${portionUnit} daily)`)
       }
     } else if (trackingType === 'percentage' || category === 'Munkarat') {
@@ -71,9 +78,9 @@ export default function CreateAssignmentModal({
       setCategory('Zikr')
       setCustomCategory('')
       setTrackingType('counter')
-    } catch (error) {
+    } catch (error: any) {
       console.error(error)
-      alert("Failed to create assignment. Make sure your database migration ran successfully.")
+      alert(`Failed to create assignment: ${error.message || error}`)
     } finally {
       setIsLoading(false)
     }
@@ -81,18 +88,6 @@ export default function CreateAssignmentModal({
 
   // Pre-filled dynamic categories based on user feedback
   const categories = ["Zikr", "Reading", "Prayer", "Nawafil", "Sport", "Munkarat", "Custom"]
-
-  // Available Academy Library Books
-  const libraryBooks = [
-    { id: '9', title: 'Riyad as-Salihin (The Gardens of the Righteous)' },
-    { id: '7', title: 'Anwar ul-Quran / Tafsir Ibn Kathir' },
-    { id: 'cont-fiqh', title: 'Fiqh Simplified: Core Principles' },
-    { id: 'cont-history', title: 'History of the Caliphs' },
-    { id: 'cont-tafsir', title: 'Gems of Tafsir' },
-    { id: 'feat-1', title: 'The Marvels of Creation: Foundations of Islamic Science' },
-    { id: '1', title: 'Introduction to Hadith' },
-    { id: '8', title: 'Hisnul Muslim (Fortress of the Muslim)' }
-  ]
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -229,9 +224,13 @@ export default function CreateAssignmentModal({
                     onChange={e => setSelectedBookId(e.target.value)}
                     className="w-full px-3 py-2.5 rounded-xl border border-emerald-500/30 bg-white dark:bg-black text-xs font-medium outline-none"
                   >
-                    {libraryBooks.map(b => (
-                      <option key={b.id} value={b.id}>{b.title}</option>
-                    ))}
+                    {books && books.length > 0 ? (
+                      books.map(b => (
+                        <option key={b.id} value={b.id}>{b.title}</option>
+                      ))
+                    ) : (
+                      <option value="" disabled>No books uploaded to class library yet</option>
+                    )}
                   </select>
                 </div>
               )}

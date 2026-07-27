@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import CreateAssignmentModal from './CreateAssignmentModal'
 
-export default function CreateAssignmentButton({ classId }: { classId: string }) {
+export default function CreateAssignmentButton({ classId, books = [] }: { classId: string, books?: any[] }) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -22,7 +22,7 @@ export default function CreateAssignmentButton({ classId }: { classId: string })
       </button>
 
       {/* The Dynamic Modal */}
-      <CreateAssignmentModal isOpen={isOpen} setIsOpen={setIsOpen} classId={classId} />
+      <CreateAssignmentModal isOpen={isOpen} setIsOpen={setIsOpen} classId={classId} books={books} />
     </>
   )
 }

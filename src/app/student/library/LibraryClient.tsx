@@ -223,33 +223,34 @@ export default function LibraryClient({
   const [requestTitle, setRequestTitle] = useState('')
   const [requestAuthor, setRequestAuthor] = useState('')
 
-  // Merge database resources with rich defaults
-  const allResources: ResourceItem[] = useMemo(() => {
-    if (initialResources && initialResources.length > 0) {
-      const mapped = initialResources.map((r: any, idx: number) => ({
-        id: r.id || String(idx),
-        title: r.title || 'Untitled Resource',
-        author: r.author || 'Scholarly Publication',
-        category: r.category || 'Quran & Tafsir',
-        pages: r.pages || 200,
-        rating: r.rating || 4.8,
-        coverColor: 'from-[#193a2c] to-[#0c1f17]',
-        badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
-        badgeText: (r.category || 'ISLAMIC').toUpperCase(),
-        description: r.description || 'Comprehensive resource available in the student library.',
-        file_url: r.file_url || r.fileUrl
-      }))
-      return [...mapped, ...DEFAULT_RESOURCES]
+  // Define permanent API-based resources
+  const GLOBAL_API_RESOURCES: ResourceItem[] = [
+    {
+      id: 'quran',
+      title: 'The Holy Quran (Al-Quran Al-Kareem)',
+      author: 'Quran.com Live API',
+      category: 'Quran & Tafsir',
+      pages: 604,
+      rating: 5.0,
+      coverColor: 'from-[#0d3b2c] to-[#061d15]',
+      badgeColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+      badgeText: 'LIVE API',
+      description: 'Read the Holy Quran with translations, audio recitations, and tafsir powered by Quran.com.',
+      file_url: '' 
     }
-    return DEFAULT_RESOURCES
+  ]
+
+  // Combine dynamically fetched resources directly with API resources
+  const allResources: ResourceItem[] = useMemo(() => {
+    return [...(initialResources || []), ...GLOBAL_API_RESOURCES]
   }, [initialResources])
 
-  // Dynamically pick the featured book: prioritize recently teacher-uploaded class books, fallback to Marvels of Creation
+  // Dynamically pick the featured book: the newest available resource
   const featuredBook = useMemo(() => {
-    const uploaded = allResources.find(r => r.file_url && r.id !== 'quran')
-    if (uploaded) return uploaded
-    return DEFAULT_RESOURCES.find(r => r.id === 'feat-1') || DEFAULT_RESOURCES[1]
+    if (allResources.length > 0) return allResources[0]
+    return null
   }, [allResources])
+
 
   // Dynamically compute continue reading list based on live student progress & uploaded class books
   const continueReadingList = useMemo(() => {
@@ -283,55 +284,26 @@ export default function LibraryClient({
         const pdata = sp.progress_data || {}
         const bId = pdata.book_id || sp.assignment_id
         if (sp.completed_value > 0 && bId && !seenIds.has(bId)) {
-          seenIds.add(bId)
           const matchedResource = allResources.find(r => r.id === bId)
-          const target = sp.target_count || 10
-          const percent = Math.min(100, Math.round((sp.completed_value / target) * 100))
-          list.push({
-            id: bId,
-            title: pdata.book_title || matchedResource?.title || 'Assigned Book',
-            author: matchedResource?.author || 'Class Instructor',
-            percent,
-            pagesStr: `${sp.completed_value} portions read`,
-            coverColor: matchedResource?.coverColor || 'from-[#0d3b2c] to-[#061d15]',
-            textColor: 'text-emerald-100'
-          })
+          if (matchedResource) {
+            seenIds.add(bId)
+            const target = sp.target_count || 10
+            const percent = Math.min(100, Math.round((sp.completed_value / target) * 100))
+            list.push({
+              id: bId,
+              title: pdata.book_title || matchedResource.title || 'Assigned Book',
+              author: matchedResource.author || 'Class Instructor',
+              percent,
+              pagesStr: `${sp.completed_value} portions read`,
+              coverColor: matchedResource.coverColor || 'from-[#0d3b2c] to-[#061d15]',
+              textColor: 'text-emerald-100'
+            })
+          }
         }
       })
     }
 
-    // 3. Add any custom teacher-uploaded books so students immediately see them in Continue Reading
-    allResources.forEach(r => {
-      if (r.file_url && r.id !== 'quran' && !seenIds.has(r.id)) {
-        seenIds.add(r.id)
-        list.push({
-          id: r.id,
-          title: r.title,
-          author: r.author,
-          percent: 5,
-          pagesStr: 'Class Uploaded • Start',
-          coverColor: 'from-[#1b3d2f] to-[#0d2219]',
-          textColor: 'text-white'
-        })
-      }
-    })
-
-    // 4. Fill up to 4 items with standard defaults if needed
-    const defaults = [
-      { id: 'quran', title: 'The Holy Quran', author: 'Quran.com Live API', percent: 25, pagesStr: 'Rub el Juz Active', coverColor: 'from-[#0d3b2c] to-[#061d15]', textColor: 'text-emerald-100' },
-      { id: 'cont-fiqh', title: 'Fiqh Simplified', author: 'Dr. Ahmed Ibrahim', percent: 68, pagesStr: '134/190 pages', coverColor: 'from-[#e9dfcb] to-[#cfc0a1]', textColor: 'text-gray-800 dark:text-white' },
-      { id: 'cont-history', title: 'History of the Caliphs', author: 'Ustadh Sulaiman', percent: 12, pagesStr: '45/380 pages', coverColor: 'from-[#2e3b4e] to-[#141d2b]', textColor: 'text-white' },
-      { id: 'cont-tafsir', title: 'Gems of Tafsir', author: 'Shaykh Hassan Al-Banna', percent: 88, pagesStr: '312/355 pages', coverColor: 'from-[#ded2b8] to-[#bfac85]', textColor: 'text-gray-800 dark:text-white' }
-    ]
-
-    defaults.forEach(d => {
-      if (!seenIds.has(d.id) && list.length < 4) {
-        seenIds.add(d.id)
-        list.push(d)
-      }
-    })
-
-    return list.slice(0, 4)
+    return list
   }, [bookProgress, studentProgress, allResources])
 
   // Categories list with counts
@@ -436,6 +408,7 @@ export default function LibraryClient({
       <main className="p-8 max-w-[1240px] w-full mx-auto space-y-8">
         
         {/* HERO FEATURED BANNER */}
+        {featuredBook ? (
         <div className="relative overflow-hidden bg-[#092B2B] rounded-[32px] p-8 md:p-10 text-white shadow-xl">
           {/* Subtle geometric background glow */}
           <div className="absolute right-0 top-0 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -494,6 +467,19 @@ export default function LibraryClient({
             </div>
           </div>
         </div>
+        ) : (
+          <div className="relative overflow-hidden bg-white dark:bg-[#111] rounded-[32px] p-8 md:p-10 text-center shadow-sm border border-dashed border-gray-300 dark:border-gray-800">
+            <div className="flex flex-col items-center justify-center py-6">
+              <svg className="w-12 h-12 text-gray-300 dark:text-gray-700 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white mb-2">Welcome to your Digital Library</h2>
+              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto text-sm">
+                Your active classes do not have any library resources uploaded yet. When your instructor adds books, they will appear here.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* CONTINUE READING ROW */}
         <div className="space-y-4">
@@ -504,41 +490,49 @@ export default function LibraryClient({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {continueReadingList.map((item, idx) => (
-              <div
-                key={item.id}
-                onClick={() => handleOpenBook(item.id)}
-                className="bg-white dark:bg-[#111] p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 group"
-              >
-                {/* Book Mini Cover */}
-                <div className={`w-14 h-20 rounded-lg bg-gradient-to-br ${item.coverColor} shadow-md shrink-0 flex flex-col items-center justify-center p-1.5 text-center border border-black/10`}>
-                  <div className="w-3 h-3 rounded-full border border-black/20 dark:border-white/20 mb-1"></div>
-                  <p className={`text-[8px] font-bold leading-tight line-clamp-2 ${item.textColor || 'text-gray-800 dark:text-white'}`}>{item.title}</p>
-                </div>
-
-                {/* Progress Content */}
-                <div className="flex-1 min-w-0 space-y-2">
-                  <div>
-                    <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-primary-600 transition-colors">
-                      {item.title}
-                    </h4>
-                    <p className="text-xs text-gray-500 truncate">{item.author}</p>
+          {continueReadingList.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+              {continueReadingList.map((item, idx) => (
+                <div
+                  key={item.id}
+                  onClick={() => handleOpenBook(item.id)}
+                  className="bg-white dark:bg-[#111] p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm hover:shadow-md transition-all cursor-pointer flex items-center gap-4 group"
+                >
+                  {/* Book Mini Cover */}
+                  <div className={`w-14 h-20 rounded-lg bg-gradient-to-br ${item.coverColor} shadow-md shrink-0 flex flex-col items-center justify-center p-1.5 text-center border border-black/10`}>
+                    <div className="w-3 h-3 rounded-full border border-black/20 dark:border-white/20 mb-1"></div>
+                    <p className={`text-[8px] font-bold leading-tight line-clamp-2 ${item.textColor || 'text-gray-800 dark:text-white'}`}>{item.title}</p>
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px] font-bold">
-                      <span className="text-emerald-600 dark:text-emerald-400">{item.percent}% complete</span>
-                      <span className="text-gray-400">{item.pagesStr}</span>
+                  {/* Progress Content */}
+                  <div className="flex-1 min-w-0 space-y-2">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-primary-600 transition-colors">
+                        {item.title}
+                      </h4>
+                      <p className="text-xs text-gray-500 truncate">{item.author}</p>
                     </div>
-                    <div className="w-full h-1.5 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-[#092B2B] dark:bg-emerald-400 rounded-full" style={{ width: `${item.percent}%` }}></div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-[11px] font-bold">
+                        <span className="text-emerald-600 dark:text-emerald-400">{item.percent}% complete</span>
+                        <span className="text-gray-400">{item.pagesStr}</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-gray-100 dark:bg-white/10 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#092B2B] dark:bg-emerald-400 rounded-full" style={{ width: `${item.percent}%` }}></div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-[#111] p-6 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm text-center">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                You haven't started reading any books yet. Select a resource from your library below to begin!
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 2-COLUMN MAIN CONTENT (SIDEBAR + BOOKS GRID) */}

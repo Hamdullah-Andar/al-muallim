@@ -16,21 +16,26 @@ export async function createAssignment(formData: FormData) {
   const trackingType = formData.get('trackingType') as string
   
   // Build the dynamic JSONB content based on the tracking type
-  let content: any = {}
+  let content: any = { category } // Preserve original category name (e.g. 'Nawafil')
   if (trackingType === 'counter') {
     content = {
+      ...content,
       target: parseInt(formData.get('target') as string) || 1,
       unit: (formData.get('unit') as string) || 'Times',
       linkedBookId: (formData.get('linkedBookId') as string) || null,
-      externalUrl: (formData.get('externalUrl') as string) || null
+      externalUrl: (formData.get('externalUrl') as string) || null,
+      trackingType: 'counter'
     }
   } else if (trackingType === 'percentage') {
     content = {
+      ...content,
       target: 0,
       unit: '%',
       startValue: 100,
       trackingType: 'percentage'
     }
+  } else {
+    content.trackingType = trackingType
   }
 
   // Insert into our newly migrated dynamic assignments table
@@ -49,7 +54,7 @@ export async function createAssignment(formData: FormData) {
 
   if (error) {
     console.error('Database Error:', error)
-    throw new Error('Failed to create assignment')
+    throw new Error(`Database Error: ${error.message || JSON.stringify(error)}`)
   }
 
   // Refresh the page so the new assignment shows up instantly

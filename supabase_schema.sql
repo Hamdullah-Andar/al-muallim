@@ -133,12 +133,11 @@ CREATE TABLE public.assignments (
   student_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE, 
   title text NOT NULL,
   
-  -- The type of homework dictates how the frontend renders it.
-  assignment_type text CHECK (assignment_type IN ('zikr', 'reading', 'memorization', 'prayer', 'tarjoma', 'custom')) NOT NULL,
+  -- The category of the assignment (e.g. 'Zikr', 'Reading', 'Prayer', 'Custom')
+  category text NOT NULL,
   
-  -- JSONB is the superpower column. It stores the specific rules for the assignment type.
-  -- Example Zikr: {"phrase": "Astaghfirullah", "target": 200}
-  -- Example Reading: {"book_id": "uuid", "start_page": 10, "end_page": 15}
+  -- The type of tracking used ('counter', 'percentage', 'checkbox')
+  tracking_type text NOT NULL,
   content jsonb DEFAULT '{}'::jsonb NOT NULL,
   
   due_date timestamp with time zone,
