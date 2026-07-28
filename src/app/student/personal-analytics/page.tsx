@@ -11,22 +11,21 @@ export default async function StudentAnalytics() {
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
   // 1. Fetch live Gamification Stats
-  const { currentStreak, knowledgePoints, completedTasks } = await calculateStudentStats(supabase, user.id, 'class');
+  const { currentStreak, knowledgePoints, completedTasks } = await calculateStudentStats(supabase, user.id, 'personal');
 
-  // 2. Fetch enrolled classes
+  // 2. Fetch enrolled classes (still useful for context)
   const { data: enrollments } = await supabase.from('class_students').select('class_id, classes(name)').eq('student_id', user.id);
   const classIds = enrollments?.map(e => e.class_id) || [];
   
-  // 3. Fetch all active assignments for their classes
-  let assignments: any[] = [];
-  if (classIds.length > 0) {
-    const { data: classAssignments } = await supabase
-      .from('assignments')
-      .select('*')
-      .in('class_id', classIds)
-      .eq('is_daily', true);
-    assignments = classAssignments || [];
-  }
+  // 3. Fetch all active personal assignments
+  const { data: classAssignments } = await supabase
+    .from('assignments')
+    .select('*')
+    .is('class_id', null)
+    .eq('student_id', user.id)
+    .eq('is_daily', true);
+    
+  let assignments: any[] = classAssignments || [];
 
   // 4. Fetch the student's progress for the last 60 days
   const sixtyDaysAgo = new Date();
@@ -39,7 +38,9 @@ export default async function StudentAnalytics() {
     .eq('student_id', user.id)
     .gte('tracking_date', dateThreshold);
 
-  const allProgress = progress || [];
+  // ONLY keep progress for personal assignments
+  const personalAssignmentIds = assignments.map(a => a.id);
+  const allProgress = (progress || []).filter(p => personalAssignmentIds.includes(p.assignment_id));
 
   // --- DYNAMIC PRAYER STATS (Last 7 Days) ---
   const prayerAssignments = assignments.filter(a => a.category === 'Prayer');
@@ -120,15 +121,7 @@ export default async function StudentAnalytics() {
     };
   });
 
-  // If no Zikrs exist yet, provide dynamic defaults
-  if (zikrStats.length === 0) {
-    zikrStats.push(
-      { name: 'SubhanAllah', count: 1240 },
-      { name: 'Alhamdulillah', count: 980 },
-      { name: 'Allahu Akbar', count: 1500 }
-    );
-  }
-
+  // Removed mock Zikr data to ensure Personal Analytics is clean and reflects actual usage
   // --- DYNAMIC AREA CHART DATA (Last 7 Days) ---
   const daysOfWeek = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
   const chartData = [];
@@ -182,7 +175,7 @@ export default async function StudentAnalytics() {
   const uniqueActiveDaysCount = new Set(allProgress.map(p => p.tracking_date)).size || 1;
   const totalCompletedCount = allProgress.filter(p => p.is_completed).length;
   const expectedTotalTasks = assignments.length * uniqueActiveDaysCount;
-  const overallCompletion = expectedTotalTasks > 0 ? Math.min(Math.round((totalCompletedCount / expectedTotalTasks) * 100), 100) : 84;
+  const overallCompletion = expectedTotalTasks > 0 ? Math.min(Math.round((totalCompletedCount / expectedTotalTasks) * 100), 100) : 0;
 
   // --- DYNAMIC SPIRITUAL PILLAR ANALYTICS ---
   const getScoreText = (rate: number) => rate >= 90 ? `Excellent (${rate}%)` : rate >= 80 ? `Very Good (${rate}%)` : rate >= 70 ? `Good (${rate}%)` : `Developing (${rate}%)`;
@@ -192,18 +185,18 @@ export default async function StudentAnalytics() {
   const nawafilProgressCount = allProgress.filter(p => nawafilAssignments.some(na => na.id === p.assignment_id) && p.is_completed).length;
   const nawafilRate = nawafilAssignments.length > 0 
     ? Math.min(Math.round((nawafilProgressCount / (nawafilAssignments.length * 7)) * 100), 100)
-    : Math.min(Math.round(prayerPercentage * 0.92), 100);
+    : 0;
 
   // 2. Quran Reading & Recitation
   const quranAssignments = assignments.filter(a => a.category === 'Quran' || a.title?.toLowerCase().includes('quran') || a.title?.toLowerCase().includes('read') || a.title?.toLowerCase().includes('recit'));
   const quranProgressCount = allProgress.filter(p => quranAssignments.some(qa => qa.id === p.assignment_id) && p.is_completed).length;
   const quranRate = quranAssignments.length > 0
     ? Math.min(Math.round((quranProgressCount / (quranAssignments.length * 7)) * 100), 100)
-    : Math.min(Math.round(overallCompletion * 0.95), 100);
+    : 0;
 
   // 3. Guarding Senses (Avoid Munkarat)
   const munkaratProgress = allProgress.filter(p => p.progress_data && typeof p.progress_data === 'object');
-  let munkaratRate = 96;
+  let munkaratRate = 0;
   if (munkaratProgress.length > 0) {
     let totalPurity = 0;
     let count = 0;
@@ -219,7 +212,7 @@ export default async function StudentAnalytics() {
   }
 
   // 4. Daily Adhkar & Duas
-  const zikrRate = zikrStats.length > 0 ? Math.min(Math.round((zikrStats.reduce((acc, z) => acc + z.count, 0) / 1500) * 100), 100) : 94;
+  const zikrRate = zikrStats.length > 0 ? Math.min(Math.round((zikrStats.reduce((acc, z) => acc + z.count, 0) / 1500) * 100), 100) : 0;
 
   // --- DYNAMIC CUSTOM & ADDITIONAL ASSIGNMENTS ---
   const customAssignmentsList = assignments
@@ -249,16 +242,7 @@ export default async function StudentAnalytics() {
       };
     });
 
-  if (customAssignmentsList.length === 0) {
-    customAssignmentsList.push(
-      { id: 'm1', title: 'Maghrib Nawafil', category: 'Nawafil', completedThisWeek: 6, totalCompleted: 24, percentage: 86, icon: '🌙' },
-      { id: 'm2', title: 'Ishraq Nawafil', category: 'Nawafil', completedThisWeek: 5, totalCompleted: 20, percentage: 71, icon: '🌙' },
-      { id: 'm3', title: 'Exercise for half an hour', category: 'General', completedThisWeek: 7, totalCompleted: 28, percentage: 100, icon: '⚡' },
-      { id: 'm4', title: 'Reading Riyad as-Salihin', category: 'Reading', completedThisWeek: 6, totalCompleted: 25, percentage: 86, icon: '📚' },
-      { id: 'm5', title: 'Reading Anwar ul Quran Tafseer', category: 'Reading', completedThisWeek: 5, totalCompleted: 21, percentage: 71, icon: '📚' }
-    );
-  }
-
+  // Removed mock data for custom assignments
   const displaySubjects = [
     { title: "Nawafil & Sunnahs", score: getScoreText(nawafilRate), icon: "🌙", description: "Voluntary & night prayers" },
     { title: "Quran Recitation", score: getScoreText(quranRate), icon: "📖", description: "Daily reading & reflection" },
@@ -272,8 +256,8 @@ export default async function StudentAnalytics() {
       userName={profile?.full_name || 'Student'}
       currentStreak={currentStreak}
       streakDiffText={streakDiffText}
-      overallCompletion={overallCompletion || 84}
-      xp={knowledgePoints || 720}
+      overallCompletion={overallCompletion}
+      xp={knowledgePoints || 0}
       chartData={chartData}
       prayerStats={prayerStats}
       zikrStats={zikrStats}

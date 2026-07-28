@@ -1,13 +1,25 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
-export async function calculateStudentStats(supabase: SupabaseClient, studentId: string) {
+export async function calculateStudentStats(
+  supabase: SupabaseClient, 
+  studentId: string, 
+  type: 'all' | 'personal' | 'class' = 'all'
+) {
   // Fetch all completed progress sorted by date descending
-  const { data: progress } = await supabase
+  let query = supabase
     .from('student_progress')
-    .select('tracking_date')
+    .select('tracking_date, assignments!inner(class_id)')
     .eq('student_id', studentId)
     .eq('is_completed', true)
-    .order('tracking_date', { ascending: false })
+    .order('tracking_date', { ascending: false });
+
+  if (type === 'personal') {
+    query = query.is('assignments.class_id', null);
+  } else if (type === 'class') {
+    query = query.not('assignments.class_id', 'is', null);
+  }
+
+  const { data: progress } = await query;
 
   if (!progress || progress.length === 0) {
     return { currentStreak: 0, knowledgePoints: 0, completedTasks: 0 }

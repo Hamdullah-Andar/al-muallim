@@ -6,7 +6,6 @@ import ZikrTrackerRow from '@/components/ui/ZikrTrackerRow'
 import AcademicTaskCard from '@/components/ui/AcademicTaskCard'
 import MankiratTracker from '@/components/ui/MankiratTracker'
 import DailyPrayersCard from '@/components/ui/DailyPrayersCard'
-import CreateHabitButton from '@/components/student/CreateHabitButton'
 import { calculateStudentStats } from '@/utils/gamification'
 import { getNextPrayer } from '@/utils/prayerTimes'
 
@@ -35,16 +34,17 @@ export default async function StudentDashboard() {
     teacherId: e.classes.teacher_id
   }))
 
-  // 3. Fetch ONLY Personal assignments (class_id IS NULL)
-  const { data: classAssignments } = await supabase
-    .from('assignments')
-    .select('*')
-    .is('class_id', null)
-    .eq('student_id', user.id)
-    .eq('is_daily', true)
-    .order('created_at', { ascending: true })
-    
-  let assignments: any[] = classAssignments || []
+  // 3. Fetch all active assignments for those classes
+  let assignments: any[] = []
+  if (classIds.length > 0) {
+    const { data: classAssignments } = await supabase
+      .from('assignments')
+      .select('*, classes(name)')
+      .in('class_id', classIds)
+      .eq('is_daily', true)
+      .order('created_at', { ascending: true })
+    assignments = classAssignments || []
+  }
 
   // 4. Fetch the student's progress for TODAY + all historical progress & book_progress for starting point calculation
   const todayDate = new Date().toISOString().split('T')[0]
@@ -127,8 +127,8 @@ export default async function StudentDashboard() {
   const completedTasksToday = progress?.filter(p => p.is_completed && assignmentIds.has(p.assignment_id)).length || 0
   const completionPercentage = totalTasks === 0 ? 0 : Math.round((completedTasksToday / totalTasks) * 100)
 
-  // Fetch ALL-TIME Gamification Stats (Personal ONLY) & Live Prayer Times
-  const { currentStreak, completedTasks } = await calculateStudentStats(supabase, user.id, 'personal');
+  // Fetch ALL-TIME Gamification Stats & Live Prayer Times
+  const { currentStreak, completedTasks } = await calculateStudentStats(supabase, user.id, 'class');
   const nextPrayer = await getNextPrayer();
 
   // Fetch library books for personal reading goals
@@ -141,12 +141,11 @@ export default async function StudentDashboard() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
         <div>
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">Assalamu Alaikum, {profile?.full_name?.split(' ')[0] || 'Student'}</h1>
-          <p className="opacity-70 text-sm">Welcome to your Personal Taqwa Space.</p>
+          <p className="opacity-70 text-sm">Welcome to your Academy Classes Space.</p>
         </div>
         
         {/* Right side Profile controls */}
         <div className="flex items-center gap-4 sm:gap-6">
-          <CreateHabitButton books={libraryBooks || []} />
           
           <button className="text-gray-400 hover:text-gray-900 transition-colors hidden sm:block">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>

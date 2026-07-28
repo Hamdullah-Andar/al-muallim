@@ -71,17 +71,19 @@ export default function AcademicTaskCard({ assignment, initialProgress }: Academ
   const getReadingLink = () => {
     const linked = assignment.content?.linkedBookId || assignment.linked_book_id
     const param = `?assignmentId=${assignment.id}&startRoba=${startingPoint}`
+    const basePath = assignment.class_id === null ? '/student/personal-library' : '/student/library'
+    
     if (linked === 'quran' || titleLower.includes('quran') || titleLower.includes('recit') || titleLower.includes('surah') || titleLower.includes('juz') || titleLower.includes('ayah')) {
-      return `/student/library/quran${param}`
+      return `${basePath}/quran${param}`
     }
     if (linked && linked !== 'quran' && linked !== 'external') {
-      return `/student/library/${linked}${param}`
+      return `${basePath}/${linked}${param}`
     }
-    if (titleLower.includes('tafsir') || titleLower.includes('anwar')) return `/student/library/7${param}`
-    if (titleLower.includes('hadith') || titleLower.includes('riyad')) return `/student/library/9${param}`
-    if (titleLower.includes('fiqh')) return `/student/library/cont-fiqh${param}`
-    if (titleLower.includes('history') || titleLower.includes('caliph')) return `/student/library/cont-history${param}`
-    return `/student/library/quran${param}`
+    if (titleLower.includes('tafsir') || titleLower.includes('anwar')) return `${basePath}/7${param}`
+    if (titleLower.includes('hadith') || titleLower.includes('riyad')) return `${basePath}/9${param}`
+    if (titleLower.includes('fiqh')) return `${basePath}/cont-fiqh${param}`
+    if (titleLower.includes('history') || titleLower.includes('caliph')) return `${basePath}/cont-history${param}`
+    return `${basePath}/quran${param}`
   }
 
   const handleMarkDone = async () => {

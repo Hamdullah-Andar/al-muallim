@@ -28,10 +28,20 @@ export default async function StudentLayout({
     redirect('/teacher/dashboard')
   }
 
+  // Check if student is enrolled in any active classes
+  const { data: enrollments } = await supabase
+    .from('class_students')
+    .select('class_id, classes!inner(is_active)')
+    .eq('student_id', user.id)
+    .eq('classes.is_active', true)
+    .limit(1)
+
+  const hasClasses = enrollments && enrollments.length > 0
+
   return (
     <div className="min-h-screen flex bg-[#fbfbfb] dark:bg-background font-sans">
       {/* LEFT SIDEBAR NAVIGATION */}
-      <StudentSidebar />
+      <StudentSidebar hasClasses={hasClasses} />
 
       {/* MAIN CONTENT AREA */}
       <main className="flex-1 flex flex-col min-h-screen min-w-0 overflow-y-auto overflow-x-hidden relative">
