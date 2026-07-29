@@ -22,11 +22,14 @@ export default async function StudentLibraryPage() {
   // 1. Fetch active classes the student has joined
   const { data: enrollments } = await supabase
     .from('class_students')
-    .select('class_id, classes!inner(is_active)')
+    .select('class_id, classes(is_active)')
     .eq('student_id', user.id)
-    .eq('classes.is_active', true)
 
-  const classIds = enrollments?.map(e => e.class_id) || []
+  // Include classes where is_active is true OR null (not explicitly archived)
+  const classIds = (enrollments || [])
+    .filter((e: any) => e.classes?.is_active !== false)
+    .map((e: any) => e.class_id)
+    .filter(Boolean)
 
   // 2. Fetch books assigned to those classes or global books
   let books: any[] = []

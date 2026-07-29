@@ -33,41 +33,20 @@ export default function AnalyticsDashboardClient({
   const [timeRange, setTimeRange] = useState<'Daily' | 'Weekly' | 'Monthly'>('Weekly')
   const [showPrayerModal, setShowPrayerModal] = useState(false)
 
-  // Derive dynamic stats based on timeRange
-  const displayCompletion = timeRange === 'Daily' 
-    ? Math.max(0, overallCompletion - 15) // Simulate slightly lower for daily
-    : timeRange === 'Monthly' 
-      ? Math.min(100, overallCompletion + 5) 
-      : overallCompletion;
+  // Always use the real completion value
+  const displayCompletion = overallCompletion;
 
-  // Chart data scaling
-  const displayChartData = timeRange === 'Daily' 
-    ? [
-        { day: '6 AM', score: 30 }, { day: '9 AM', score: 45 }, { day: '12 PM', score: 60 }, 
-        { day: '3 PM', score: 55 }, { day: '6 PM', score: 80 }, { day: '9 PM', score: 95 }
-      ]
-    : timeRange === 'Monthly'
-      ? [
-          { day: 'W1', score: 70 }, { day: 'W2', score: 75 }, { day: 'W3', score: 82 }, { day: 'W4', score: 88 }
-        ]
-      : chartData;
+  // Chart data - always use real data for accuracy
+  const displayChartData = chartData;
 
-  const displayPrayerStats = {
-    ...prayerStats,
-    percentage: timeRange === 'Daily' ? Math.round(prayerStats.percentage * 0.8) : timeRange === 'Monthly' ? Math.min(100, Math.round(prayerStats.percentage * 1.1)) : prayerStats.percentage,
-    totalTracked: timeRange === 'Daily' ? Math.round(prayerStats.totalTracked / 7) : timeRange === 'Monthly' ? prayerStats.totalTracked * 4 : prayerStats.totalTracked,
-    target: timeRange === 'Daily' ? Math.round(prayerStats.target / 7) : timeRange === 'Monthly' ? prayerStats.target * 4 : prayerStats.target
-  };
+  // Always show real prayer stats
+  const displayPrayerStats = prayerStats;
 
-  const displayZikrStats = zikrStats.map(z => ({
-    ...z,
-    count: timeRange === 'Daily' ? Math.round(z.count / 7) : timeRange === 'Monthly' ? z.count * 4 : z.count
-  }));
+  // Always show real zikr stats
+  const displayZikrStats = zikrStats;
 
-  const displayCustomAssignments = customAssignments?.map(c => ({
-    ...c,
-    percentage: timeRange === 'Daily' ? Math.max(0, c.percentage - 10) : timeRange === 'Monthly' ? Math.min(100, c.percentage + 5) : c.percentage
-  }));
+  // Always show real custom assignment stats
+  const displayCustomAssignments = customAssignments;
 
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500 font-sans w-full min-w-0 overflow-x-hidden">

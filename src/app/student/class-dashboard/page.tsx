@@ -22,7 +22,7 @@ export default async function StudentDashboard() {
   // 2. Fetch the active classes this student is enrolled in
   const { data: enrollments } = await supabase.from('class_students').select('class_id, classes(name, teacher_id, is_active)').eq('student_id', user.id)
   
-  // Filter out any archived classes
+  // Filter out any explicitly archived classes (is_active === false)
   const activeEnrollments = enrollments?.filter((e: any) => e.classes && e.classes.is_active !== false) || []
   
   const classIds = activeEnrollments.map((e: any) => e.class_id)

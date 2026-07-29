@@ -257,10 +257,10 @@ export default function LibraryClient({
     const list: any[] = []
     const seenIds = new Set<string>()
 
-    // 1. Add active books read from bookProgress
+    // 1. Add active books read from bookProgress (only if user has actually read something)
     if (bookProgress && bookProgress.length > 0) {
       bookProgress.forEach((bp: any) => {
-        if (!seenIds.has(bp.book_id)) {
+        if (!seenIds.has(bp.book_id) && (bp.completed_portions || 0) > 0) {
           const matchedResource = allResources.find(r => r.id === bp.book_id)
           if (matchedResource) {
             seenIds.add(bp.book_id)

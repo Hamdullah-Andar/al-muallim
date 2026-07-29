@@ -5,21 +5,69 @@ export async function calculateStudentStats(
   studentId: string, 
   type: 'all' | 'personal' | 'class' = 'all'
 ) {
-  // Fetch all completed progress sorted by date descending
-  let query = supabase
-    .from('student_progress')
-    .select('tracking_date, assignments!inner(class_id)')
-    .eq('student_id', studentId)
-    .eq('is_completed', true)
-    .order('tracking_date', { ascending: false });
+  // First, get the relevant assignment IDs for this student
+  let assignmentIds: string[] = []
 
   if (type === 'personal') {
-    query = query.is('assignments.class_id', null);
+    // Personal habits: assignments with null class_id belonging to this student
+    const { data: personalAssignments } = await supabase
+      .from('assignments')
+      .select('id')
+      .is('class_id', null)
+      .eq('student_id', studentId)
+    assignmentIds = (personalAssignments || []).map(a => a.id)
   } else if (type === 'class') {
-    query = query.not('assignments.class_id', 'is', null);
+    // Class assignments: student must be enrolled in those classes
+    const { data: enrollments } = await supabase
+      .from('class_students')
+      .select('class_id')
+      .eq('student_id', studentId)
+    const classIds = (enrollments || []).map(e => e.class_id).filter(Boolean)
+    
+    if (classIds.length > 0) {
+      const { data: classAssignments } = await supabase
+        .from('assignments')
+        .select('id')
+        .in('class_id', classIds)
+      assignmentIds = (classAssignments || []).map(a => a.id)
+    }
+  } else {
+    // 'all': personal + class
+    const { data: personalAssignments } = await supabase
+      .from('assignments')
+      .select('id')
+      .is('class_id', null)
+      .eq('student_id', studentId)
+
+    const { data: enrollments } = await supabase
+      .from('class_students')
+      .select('class_id')
+      .eq('student_id', studentId)
+    const classIds = (enrollments || []).map(e => e.class_id).filter(Boolean)
+    
+    let classAssignmentIds: string[] = []
+    if (classIds.length > 0) {
+      const { data: classAssignments } = await supabase
+        .from('assignments')
+        .select('id')
+        .in('class_id', classIds)
+      classAssignmentIds = (classAssignments || []).map(a => a.id)
+    }
+    assignmentIds = [...(personalAssignments || []).map(a => a.id), ...classAssignmentIds]
   }
 
-  const { data: progress } = await query;
+  if (assignmentIds.length === 0) {
+    return { currentStreak: 0, knowledgePoints: 0, completedTasks: 0 }
+  }
+
+  // Now fetch completed progress only for those specific assignments
+  const { data: progress } = await supabase
+    .from('student_progress')
+    .select('tracking_date')
+    .eq('student_id', studentId)
+    .in('assignment_id', assignmentIds)
+    .eq('is_completed', true)
+    .order('tracking_date', { ascending: false })
 
   if (!progress || progress.length === 0) {
     return { currentStreak: 0, knowledgePoints: 0, completedTasks: 0 }
@@ -29,17 +77,12 @@ export async function calculateStudentStats(
   const knowledgePoints = completedTasks * 10 // 10 points per task
 
   // Calculate Streak
-  // A streak is consecutive days of having AT LEAST ONE completed task.
-  // Extract unique dates
   const uniqueDates = Array.from(new Set(progress.map(p => p.tracking_date)))
   
   let currentStreak = 0;
   const today = new Date();
-  
-  // Normalize today to YYYY-MM-DD
   const todayStr = today.toISOString().split('T')[0];
   
-  // Yesterday
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayStr = yesterday.toISOString().split('T')[0];
@@ -57,7 +100,6 @@ export async function calculateStudentStats(
     
     if (d === expectedStr) {
       currentStreak++;
-      // go back one day for the next iteration
       checkDate.setDate(checkDate.getDate() - 1);
     } else {
       break; // Streak broken
