@@ -91,29 +91,39 @@ export default async function TeacherDashboard() {
   // 2. Fetch real completion rate today
   let completionRate = 0
   let completedTodayCount = 0
-  let totalTasksToday = 0
+  let totalExpectedTasks = 0
 
   if (classIds.length > 0) {
     const { data: classAssignments } = await supabase
       .from('assignments')
-      .select('id')
+      .select('id, class_id')
       .in('class_id', classIds)
       .eq('is_daily', true)
     
-    const assignmentIds = classAssignments?.map(a => a.id) || []
-    
-    if (assignmentIds.length > 0) {
+    if (classAssignments && classAssignments.length > 0) {
+      // Calculate total expected tasks today: 
+      // Each daily assignment must be completed by every student in that class
+      classAssignments.forEach((assign: any) => {
+        const studentCountForClass = studentCountMap[assign.class_id] || 0
+        totalExpectedTasks += studentCountForClass
+      })
+
+      const assignmentIds = classAssignments.map(a => a.id)
       const todayStr = new Date().toISOString().split('T')[0]
+      
       const { data: progressToday } = await supabase
         .from('student_progress')
         .select('is_completed')
         .in('assignment_id', assignmentIds)
         .eq('tracking_date', todayStr)
+        .eq('is_completed', true)
       
-      if (progressToday && progressToday.length > 0) {
-        totalTasksToday = progressToday.length
-        completedTodayCount = progressToday.filter(p => p.is_completed).length
-        completionRate = Math.round((completedTodayCount / totalTasksToday) * 100)
+      if (progressToday) {
+        completedTodayCount = progressToday.length
+      }
+
+      if (totalExpectedTasks > 0) {
+        completionRate = Math.round((completedTodayCount / totalExpectedTasks) * 100)
       }
     }
   }
