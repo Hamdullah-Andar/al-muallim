@@ -8,9 +8,10 @@ import Link from 'next/link'
 export default function JoinClassModalClient() {
   const router = useRouter()
   const [code, setCode] = useState<string[]>(Array(6).fill(''))
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'closed'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
   const [joinedClassData, setJoinedClassData] = useState<{name: string, teacher: string} | null>(null)
+  const [closedClassData, setClosedClassData] = useState<{name: string, teacher: string} | null>(null)
   const inputRefs = useRef<(HTMLInputElement | null)[]>([])
 
   // Close modal on escape key
@@ -80,7 +81,10 @@ export default function JoinClassModalClient() {
     
     const res = await joinClass(formData);
     
-    if (res?.error) {
+    if (res?.error === 'CLASS_CLOSED') {
+      setClosedClassData({ name: (res as any).className || 'This Class', teacher: (res as any).teacher || 'the instructor' });
+      setStatus('closed');
+    } else if (res?.error) {
       setErrorMessage(res.error);
       setStatus('error');
     } else if (res?.success && res.classData) {
@@ -205,6 +209,46 @@ export default function JoinClassModalClient() {
             </button>
             <button className="mt-4 text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors">
               Contact Support
+            </button>
+          </div>
+        ) : status === 'closed' ? (
+          <div className="flex flex-col items-center text-center animate-in slide-in-from-bottom-4 duration-500">
+            {/* Closed Icon */}
+            <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mb-6">
+              <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            
+            <h2 className="text-2xl font-extrabold text-[#092B2B] dark:text-white tracking-tight mb-3">Class is Closed</h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-2 max-w-[280px] leading-relaxed">
+              <span className="font-extrabold text-[#092B2B] dark:text-white">{closedClassData?.name}</span> has been closed by <span className="italic">{closedClassData?.teacher}</span>.
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium mb-8 max-w-[280px] leading-relaxed">
+              This class is no longer accepting new students. Please contact your teacher for more information.
+            </p>
+
+            <div className="w-full px-4 py-3 rounded-xl border-2 border-amber-200 bg-amber-50 dark:bg-amber-900/10 text-amber-700 dark:text-amber-400 text-xs font-bold text-center mb-6">
+              🔒 Enrollment is currently closed for this class
+            </div>
+
+            <button 
+              onClick={() => {
+                setStatus('idle');
+                setCode(Array(6).fill(''));
+                setClosedClassData(null);
+                setTimeout(() => inputRefs.current[0]?.focus(), 100);
+              }}
+              className="w-full bg-[#092B2B] hover:bg-[#0a3838] dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              Try a Different Code
+            </button>
+            <button 
+              onClick={() => router.back()}
+              className="mt-4 text-xs font-bold text-gray-500 hover:text-gray-800 transition-colors"
+            >
+              Back to Dashboard
             </button>
           </div>
         ) : (

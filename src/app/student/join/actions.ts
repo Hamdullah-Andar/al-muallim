@@ -1,7 +1,6 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
 
 export async function joinClass(formData: FormData) {
   const supabase = await createClient()
@@ -17,7 +16,7 @@ export async function joinClass(formData: FormData) {
   // 1. Find the class by code
   const { data: classData, error: classError } = await supabase
     .from('classes')
-    .select('id, name, teacher_id, profiles!classes_teacher_id_fkey(full_name)')
+    .select('id, name, teacher_id, is_active, profiles!classes_teacher_id_fkey(full_name)')
     .eq('class_code', classCode.toUpperCase())
     .single()
 
@@ -26,7 +25,16 @@ export async function joinClass(formData: FormData) {
     return { error: 'Class not found. Please verify the code with your teacher.' }
   }
 
-  // 2. Check if already enrolled
+  // 2. Check if the class is archived / closed
+  if (classData.is_active === false) {
+    return { 
+      error: 'CLASS_CLOSED',
+      className: classData.name,
+      teacher: (classData as any).profiles?.full_name || 'the instructor'
+    }
+  }
+
+  // 3. Check if already enrolled
   const { data: existingEnrollment } = await supabase
     .from('class_students')
     .select('id')
@@ -35,7 +43,7 @@ export async function joinClass(formData: FormData) {
     .single()
 
   if (!existingEnrollment) {
-    // 3. Enroll the student safely
+    // 4. Enroll the student safely
     const { error: enrollError } = await supabase
       .from('class_students')
       .insert([

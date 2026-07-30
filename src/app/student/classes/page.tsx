@@ -18,7 +18,7 @@ export default async function JoinedClassesPage() {
   // 1. Fetch Enrolled Classes
   const { data: enrollments } = await supabase
     .from('class_students')
-    .select('class_id, classes(name, description, teacher_id)')
+    .select('class_id, classes(name, description, teacher_id, is_active)')
     .eq('student_id', user.id)
 
   const rawClasses = enrollments || []
@@ -60,7 +60,8 @@ export default async function JoinedClassesPage() {
       teacherName: teacherMap[e.classes?.teacher_id] || 'Dr. Instructor',
       category: mockCategories[index % mockCategories.length],
       imageUrl: mockImages[index % mockImages.length],
-      progress: parseInt(progress, 10)
+      progress: parseInt(progress, 10),
+      isActive: e.classes?.is_active !== false
     }
   })
 

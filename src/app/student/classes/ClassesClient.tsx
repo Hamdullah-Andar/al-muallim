@@ -12,6 +12,7 @@ type ClassData = {
   category: string
   imageUrl: string
   progress: number
+  isActive?: boolean
 }
 
 export default function ClassesClient({
@@ -176,14 +177,19 @@ export default function ClassesClient({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full min-w-0">
         
         {sortedClasses.map((item, idx) => (
-          <div key={idx} className="bg-white dark:bg-[#1a1a1a] rounded-[28px] overflow-hidden shadow-sm border border-black/5 dark:border-white/5 hover:shadow-md transition-all duration-300 flex flex-col min-w-0 group">
+          <div key={idx} className={`bg-white dark:bg-[#1a1a1a] rounded-[28px] overflow-hidden shadow-sm border border-black/5 dark:border-white/5 hover:shadow-md transition-all duration-300 flex flex-col min-w-0 group ${item.isActive === false ? 'opacity-85' : ''}`}>
             {/* Card Image Banner */}
             <div className="h-44 w-full relative overflow-hidden bg-gray-100">
                <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-               <div className="absolute top-4 left-4">
+               <div className="absolute top-4 left-4 flex gap-2">
                   <span className="bg-[#092B2B]/90 backdrop-blur-sm text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-full">
                      {item.category}
                   </span>
+                  {item.isActive === false && (
+                    <span className="bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-full flex items-center gap-1">
+                      🔒 Archived / Closed
+                    </span>
+                  )}
                </div>
             </div>
 
@@ -222,7 +228,7 @@ export default function ClassesClient({
                  {/* Action Button */}
                  <Link href={`/student/class/${item.id}`} className="block w-full">
                    <button className="w-full bg-[#bdf3df] hover:bg-[#a6edd4] dark:bg-emerald-900/40 dark:hover:bg-emerald-900/60 text-[#092B2B] dark:text-emerald-400 py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2">
-                     Continue Learning
+                     {item.isActive === false ? 'View Closed Class' : 'Continue Learning'}
                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                    </button>
                  </Link>
