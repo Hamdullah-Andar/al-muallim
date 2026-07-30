@@ -66,17 +66,19 @@ export default async function TeacherDashboard() {
     .order('created_at', { ascending: false })
 
   const classIds = classes?.map(c => c.id) || []
-  const activeClassCount = classes?.filter(c => c.is_active !== false).length || 0
+  const activeClasses = classes?.filter(c => c.is_active !== false) || []
+  const activeClassIds = activeClasses.map(c => c.id)
+  const activeClassCount = activeClasses.length
 
-  // 1. Fetch real student counts
+  // 1. Fetch real student counts for ACTIVE classes
   let totalUniqueStudents = 0
   const studentCountMap: Record<string, number> = {}
 
-  if (classIds.length > 0) {
+  if (activeClassIds.length > 0) {
     const { data: enrollments } = await supabase
       .from('class_students')
       .select('class_id, student_id')
-      .in('class_id', classIds)
+      .in('class_id', activeClassIds)
     
     if (enrollments) {
       const uniqueStudentIds = new Set<string>()
@@ -88,16 +90,16 @@ export default async function TeacherDashboard() {
     }
   }
 
-  // 2. Fetch real completion rate today
+  // 2. Fetch real completion rate today for ACTIVE classes
   let completionRate = 0
   let completedTodayCount = 0
   let totalExpectedTasks = 0
 
-  if (classIds.length > 0) {
+  if (activeClassIds.length > 0) {
     const { data: classAssignments } = await supabase
       .from('assignments')
       .select('id, class_id')
-      .in('class_id', classIds)
+      .in('class_id', activeClassIds)
       .eq('is_daily', true)
     
     if (classAssignments && classAssignments.length > 0) {
@@ -128,13 +130,13 @@ export default async function TeacherDashboard() {
     }
   }
 
-  // 3. Fetch real recent activity log
+  // 3. Fetch real recent activity log for ACTIVE classes
   let recentActivities: any[] = []
-  if (classIds.length > 0) {
+  if (activeClassIds.length > 0) {
     const { data: classAssignments } = await supabase
       .from('assignments')
       .select('id, title, class_id, classes(name)')
-      .in('class_id', classIds)
+      .in('class_id', activeClassIds)
     
     const assignmentIds = classAssignments?.map(a => a.id) || []
     
