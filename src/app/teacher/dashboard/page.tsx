@@ -169,6 +169,69 @@ export default async function TeacherDashboard() {
     }
   }
 
+  // 4. Fetch daily completion rate for the last 7 days to make the Heatmap live
+  const weeklyProgressData: { dayName: string; heightPercent: number; count: number }[] = []
+  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  
+  if (activeClassIds.length > 0) {
+    const { data: classAssignments } = await supabase
+      .from('assignments')
+      .select('id, class_id')
+      .in('class_id', activeClassIds)
+      .eq('is_daily', true)
+      
+    const assignmentIds = classAssignments?.map(a => a.id) || []
+    
+    if (assignmentIds.length > 0) {
+      const dates: { dateStr: string; dayName: string }[] = []
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        const dateStr = d.toISOString().split('T')[0]
+        const dayName = daysOfWeek[d.getDay()]
+        dates.push({ dateStr, dayName })
+      }
+
+      const dateStrings = dates.map(d => d.dateStr)
+
+      const { data: progressRecords } = await supabase
+        .from('student_progress')
+        .select('tracking_date, is_completed')
+        .in('assignment_id', assignmentIds)
+        .in('tracking_date', dateStrings)
+        .eq('is_completed', true)
+
+      const completionsByDate: Record<string, number> = {}
+      progressRecords?.forEach(p => {
+        completionsByDate[p.tracking_date] = (completionsByDate[p.tracking_date] || 0) + 1
+      })
+
+      dates.forEach(item => {
+        const count = completionsByDate[item.dateStr] || 0
+        const maxExpected = totalExpectedTasks || 10
+        const heightPercent = maxExpected > 0 ? Math.min(100, Math.round((count / maxExpected) * 100)) : 0
+        
+        weeklyProgressData.push({
+          dayName: item.dayName,
+          heightPercent,
+          count
+        })
+      })
+    }
+  }
+
+  if (weeklyProgressData.length === 0) {
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date()
+      d.setDate(d.getDate() - i)
+      weeklyProgressData.push({
+        dayName: daysOfWeek[d.getDay()],
+        heightPercent: 0,
+        count: 0
+      })
+    }
+  }
+
   const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Teacher'
 
   return (
@@ -323,15 +386,23 @@ export default async function TeacherDashboard() {
               <h2 className="text-xl font-bold mb-2">Student Progress Heatmap</h2>
               <p className="opacity-80 mb-8 max-w-md">Activity is {completionRate > 0 ? `${completionRate}%` : '15%'} higher this week compared to last month. Keep up the great momentum!</p>
               
-              {/* Dynamic or visual representation of heatmap */}
-              <div className="flex items-end gap-3 h-32 opacity-80">
-                <div className="w-full bg-white/20 h-1/3 rounded-t-sm hover:bg-white/40 transition-colors cursor-pointer"></div>
-                <div className="w-full bg-white/40 h-2/3 rounded-t-sm hover:bg-white/60 transition-colors cursor-pointer"></div>
-                <div className="w-full bg-white/60 h-full rounded-t-sm hover:bg-white/80 transition-colors cursor-pointer"></div>
-                <div className="w-full bg-white/30 h-1/2 rounded-t-sm hover:bg-white/50 transition-colors cursor-pointer"></div>
-                <div className="w-full bg-white/80 h-5/6 rounded-t-sm hover:bg-white transition-colors cursor-pointer"></div>
-                <div className="w-full bg-white/50 h-2/3 rounded-t-sm hover:bg-white/70 transition-colors cursor-pointer"></div>
-                <div className="w-full bg-white/90 h-full rounded-t-sm hover:bg-white transition-colors cursor-pointer"></div>
+              {/* Dynamic Live Graph Bars */}
+              <div className="flex items-end justify-between gap-2 h-32 opacity-90">
+                {weeklyProgressData.map((day, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center h-full justify-end group/bar">
+                    <div 
+                      title={`${day.count} tasks completed on ${day.dayName}`}
+                      className="w-full bg-white/20 hover:bg-white rounded-t-sm transition-all cursor-pointer relative"
+                      style={{ height: `${Math.max(8, day.heightPercent)}%` }}
+                    >
+                      {/* Tooltip */}
+                      <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-black text-white text-[10px] py-1 px-2 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap mb-1.5 z-10 font-bold shadow-md">
+                        {day.count} tasks
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-white/50 font-bold mt-2 uppercase tracking-wider">{day.dayName}</span>
+                  </div>
+                ))}
               </div>
             </div>
             {/* Background Decoration */}
