@@ -208,7 +208,7 @@ export default function ClassDetailClient({ classData, students = [], assignment
               {students && students.length > 0 ? (
                 <div className="divide-y divide-black/5 dark:divide-white/5 max-h-[350px] overflow-y-auto">
                   {students.map((student) => (
-                    <div key={student.id} className="p-6 md:px-8 flex items-center justify-between hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
+                    <div key={student.student_id} className="p-6 md:px-8 flex items-center justify-between hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition-colors">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full flex items-center justify-center font-bold text-lg">
                           {student.profiles?.full_name?.charAt(0) || 'S'}
@@ -370,7 +370,7 @@ export default function ClassDetailClient({ classData, students = [], assignment
           {students.length > 0 ? (
             <div className="divide-y divide-black/5 dark:divide-white/5">
               {students.map((student) => (
-                <div key={student.id} className="py-4 flex items-center justify-between">
+                <div key={student.student_id} className="py-4 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full flex items-center justify-center font-bold text-lg">
                       {student.profiles?.full_name?.charAt(0) || 'S'}

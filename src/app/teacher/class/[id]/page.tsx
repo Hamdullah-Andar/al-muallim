@@ -25,7 +25,6 @@ export default async function ClassDetail({ params }: { params: Promise<{ id: st
   const { data: students } = await supabase
     .from('class_students')
     .select(`
-      id,
       student_id,
       profiles!student_id ( full_name )
     `)
