@@ -24,11 +24,13 @@ export default function AssignmentsListClient({
   books
 }: {
   initialAssignments: AssignmentInfo[]
-  classes: { id: string; name: string }[]
+  classes: { id: string; name: string; is_active?: boolean }[]
   books: any[]
 }) {
+  const activeClasses = classes.filter(c => c.is_active !== false)
+  
   const [assignments, setAssignments] = useState<AssignmentInfo[]>(initialAssignments)
-  const [selectedClassId, setSelectedClassId] = useState(classes.length > 0 ? classes[0].id : '')
+  const [selectedClassId, setSelectedClassId] = useState(activeClasses.length > 0 ? activeClasses[0].id : '')
   const [classFilter, setClassFilter] = useState('all')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [searchQuery, setSearchQuery] = useState('')
@@ -73,7 +75,7 @@ export default function AssignmentsListClient({
         </div>
 
         {/* Action Panel for Creating Assignments */}
-        {classes.length > 0 ? (
+        {activeClasses.length > 0 ? (
           <div className="bg-white dark:bg-black/30 p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-4 min-w-[320px] lg:min-w-[400px]">
             <div className="flex-1">
               <label className="block text-[10px] font-extrabold uppercase text-gray-400 tracking-wider mb-1.5">Target Classroom</label>
@@ -82,7 +84,7 @@ export default function AssignmentsListClient({
                 onChange={(e) => setSelectedClassId(e.target.value)}
                 className="w-full bg-[#f4f7f6] dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-emerald-500 transition-colors"
               >
-                {classes.map(c => (
+                {activeClasses.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>

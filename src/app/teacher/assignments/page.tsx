@@ -15,7 +15,7 @@ export default async function TeacherAssignmentsPage() {
   // Fetch all classes owned by teacher
   const { data: classes } = await supabase
     .from('classes')
-    .select('id, name')
+    .select('id, name, is_active')
     .eq('teacher_id', user.id)
     .order('created_at', { ascending: false })
 
