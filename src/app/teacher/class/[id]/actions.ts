@@ -178,3 +178,24 @@ export async function toggleClassActiveStatus(classId: string, isActive: boolean
   revalidatePath(`/teacher/class/${classId}`)
   revalidatePath('/teacher/dashboard')
 }
+
+export async function deleteAssignment(assignmentId: string, classId?: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authorized")
+
+  const { error } = await supabase
+    .from('assignments')
+    .delete()
+    .eq('id', assignmentId)
+
+  if (error) {
+    console.error('Delete Assignment Error:', error)
+    throw new Error('Failed to delete assignment')
+  }
+
+  if (classId) {
+    revalidatePath(`/teacher/class/${classId}`)
+  }
+  revalidatePath('/teacher/assignments')
+}

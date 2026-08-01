@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import CreateAssignmentButton from '@/components/CreateAssignmentButton'
-import { uploadClassBook, deleteClassBook, toggleClassActiveStatus } from './actions'
+import { uploadClassBook, deleteClassBook, toggleClassActiveStatus, deleteAssignment } from './actions'
 import { createClient } from '@/utils/supabase/client'
 
 interface ClassDetailClientProps {
@@ -31,6 +31,15 @@ export default function ClassDetailClient({ classData, students = [], assignment
       alert(`Failed to ${action} class: ` + err.message)
     } finally {
       setIsArchiving(false)
+    }
+  }
+
+  async function handleDeleteAssignment(assignmentId: string, title: string) {
+    if (!confirm(`Are you sure you want to delete the assignment "${title}"?`)) return
+    try {
+      await deleteAssignment(assignmentId, classData.id)
+    } catch (err: any) {
+      alert("Failed to delete assignment: " + (err.message || err))
     }
   }
 
@@ -402,7 +411,7 @@ export default function ClassDetailClient({ classData, students = [], assignment
           </div>
           <div className="space-y-4">
             {assignments.map(assignment => (
-              <div key={assignment.id} className="p-5 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-between">
+              <div key={assignment.id} className="p-5 rounded-2xl border border-black/10 dark:border-white/10 flex items-center justify-between hover:border-primary-500 transition-colors">
                 <div>
                   <span className="bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider">
                     {assignment.category}
@@ -416,6 +425,16 @@ export default function ClassDetailClient({ classData, students = [], assignment
                       : 'Daily Checkbox Habit'}
                   </p>
                 </div>
+                
+                <button
+                  onClick={() => handleDeleteAssignment(assignment.id, assignment.title)}
+                  className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20"
+                  title="Delete Assignment"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
               </div>
             ))}
           </div>
