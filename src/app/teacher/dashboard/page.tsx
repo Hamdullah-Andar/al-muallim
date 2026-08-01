@@ -233,6 +233,7 @@ export default async function TeacherDashboard() {
   }
 
   const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Teacher'
+  const activeClassesList = classes?.filter(c => c.is_active !== false) || []
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -247,7 +248,6 @@ export default async function TeacherDashboard() {
               : "No tasks completed yet this morning. Ready to start a new lesson?"}
           </p>
         </div>
-        <CreateClassModal />
       </div>
 
       {/* STATS ROW */}
@@ -282,7 +282,7 @@ export default async function TeacherDashboard() {
         {/* Active Classes */}
         <div className="bg-white dark:bg-black/40 p-6 rounded-xl border border-black/5 dark:border-white/5 shadow-sm">
           <div className="flex items-center gap-3 mb-4 opacity-70">
-            <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
             <p className="text-xs font-bold uppercase tracking-wider text-gray-500">Active Classes</p>
           </div>
           <div className="flex items-end justify-between">
@@ -303,29 +303,29 @@ export default async function TeacherDashboard() {
           <div>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-[#092B2B] dark:text-white">Active Classes</h2>
-              <button className="text-sm text-primary-600 dark:text-primary-400 font-bold hover:underline">View All</button>
+              <Link href="/teacher/classes" className="text-sm text-primary-600 dark:text-primary-400 font-bold hover:underline">
+                View All
+              </Link>
             </div>
             
-            {classes?.length === 0 ? (
+            {activeClassesList.length === 0 ? (
               <div className="bg-white dark:bg-black/40 p-12 rounded-xl border border-dashed border-black/20 dark:border-white/20 flex flex-col items-center justify-center text-center shadow-sm">
                 <div className="w-20 h-20 bg-primary-50 dark:bg-primary-900/20 rounded-full flex items-center justify-center mb-6">
                   <svg className="w-10 h-10 text-primary-600 dark:text-primary-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
                 </div>
                 <h3 className="text-xl font-bold mb-2">No Active Classes</h3>
-                <p className="opacity-70 max-w-sm mb-8">You haven't created any classes yet. Create your first class using the button above.</p>
+                <p className="opacity-70 max-w-sm mb-8">You have no active classes at the moment. Create or activate a class to begin.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {classes?.map((c, index) => {
+                {activeClassesList.slice(0, 4).map((c, index) => {
                   const { category, gradient, schedule } = getClassVisuals(c.name, index)
                   const studentCount = studentCountMap[c.id] || 0
 
                   return (
                     <div 
                       key={c.id}
-                      className={`group bg-white dark:bg-[#1a1a1a] rounded-[24px] overflow-hidden shadow-sm border border-black/5 dark:border-white/5 hover:shadow-md transition-all duration-300 flex flex-col min-w-0 ${
-                        c.is_active === false ? 'opacity-80' : ''
-                      }`}
+                      className="group bg-white dark:bg-[#1a1a1a] rounded-[24px] overflow-hidden shadow-sm border border-black/5 dark:border-white/5 hover:shadow-md transition-all duration-300 flex flex-col min-w-0"
                     >
                       {/* Premium Header Banner */}
                       <div className={`h-32 bg-gradient-to-r ${gradient} relative flex items-end p-5 overflow-hidden`}>
@@ -333,11 +333,6 @@ export default async function TeacherDashboard() {
                           <span className="bg-white/90 backdrop-blur-sm text-[#092B2B] text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full">
                             {category}
                           </span>
-                          {c.is_active === false && (
-                            <span className="bg-amber-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full">
-                              Archived
-                            </span>
-                          )}
                         </div>
                         {/* Decorative Background Pattern */}
                         <div className="absolute right-0 bottom-0 top-0 w-32 bg-white/5 rounded-l-full blur-xl transform translate-x-12"></div>
