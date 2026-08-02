@@ -130,7 +130,7 @@ export default function AssignmentsListClient({
               className="bg-[#f4f7f6] dark:bg-black/40 border border-black/5 dark:border-white/5 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none"
             >
               <option value="all">All Classes</option>
-              {classes.map(c => (
+              {activeClasses.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
