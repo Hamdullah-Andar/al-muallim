@@ -77,7 +77,7 @@ export default async function TeacherAnalyticsPage() {
 
     const { data: fetchedProgress } = await supabase
       .from('student_progress')
-      .select('assignment_id, student_id, tracking_date, current_value, is_completed, updated_at')
+      .select('assignment_id, student_id, tracking_date, completed_value, is_completed, updated_at')
       .in('assignment_id', assignmentIds)
       .gte('tracking_date', startDateStr)
 

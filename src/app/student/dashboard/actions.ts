@@ -67,6 +67,8 @@ export async function toggleAssignmentProgress(assignmentId: string, isCompleted
   revalidatePath('/student/analytics')
   revalidatePath('/student/assignments')
   revalidatePath('/student', 'layout')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/analytics')
 }
 
 export async function incrementZikrProgress(assignmentId: string, newCount: number, isCompleted: boolean) {
@@ -98,6 +100,8 @@ export async function incrementZikrProgress(assignmentId: string, newCount: numb
   revalidatePath('/student/analytics')
   revalidatePath('/student/assignments')
   revalidatePath('/student', 'layout')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/analytics')
 }
 
 export async function togglePrayerMask(assignmentId: string, maskValue: number) {
@@ -156,6 +160,8 @@ export async function togglePrayerMask(assignmentId: string, maskValue: number) 
   revalidatePath('/student/analytics')
   revalidatePath('/student/assignments')
   revalidatePath('/student', 'layout')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/analytics')
 }
 
 export async function updateMankiratProgress(assignmentId: string, sensesData: any) {
@@ -190,6 +196,8 @@ export async function updateMankiratProgress(assignmentId: string, sensesData: a
   revalidatePath('/student/analytics')
   revalidatePath('/student/assignments')
   revalidatePath('/student', 'layout')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/analytics')
 }
 
 export async function syncLibraryPortionRead(

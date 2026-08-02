@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react'
 type ClassItem = { id: string; name: string; code: string }
 type StudentItem = { studentId: string; fullName: string; email: string; classId: string; className: string; joinedAt: string }
 type AssignmentItem = { id: string; classId: string; className: string; category: string; title: string; trackingType: string; isDaily: boolean }
-type ProgressItem = { assignment_id: string; student_id: string; tracking_date: string; current_value: number; is_completed: boolean; updated_at: string }
+type ProgressItem = { assignment_id: string; student_id: string; tracking_date: string; completed_value?: number; is_completed: boolean; updated_at: string }
 
 export default function AnalyticsClient({
   teacherName,
@@ -75,11 +75,15 @@ export default function AnalyticsClient({
 
   // Filter progress records within the selected date range and class filter
   const relevantProgress = useMemo(() => {
-    return progressRecords.filter(p => 
-      assignmentIdSet.has(p.assignment_id) && 
-      dateSet.has(p.tracking_date) &&
-      p.is_completed
-    )
+    return progressRecords.filter(p => {
+      const pDate = p.tracking_date ? String(p.tracking_date).split('T')[0] : ''
+      const isDone = Boolean(p.is_completed) || (p.completed_value != null && Number(p.completed_value) > 0)
+      return (
+        assignmentIdSet.has(p.assignment_id) && 
+        dateSet.has(pDate) &&
+        isDone
+      )
+    })
   }, [progressRecords, assignmentIdSet, dateSet])
 
   // 1. Calculate overall metrics
@@ -114,11 +118,11 @@ export default function AnalyticsClient({
       const classAssignIds = new Set(classAssignments.map(a => a.id))
       
       const expected = classStudents.length * classAssignments.filter(a => a.isDaily).length * daysCount
-      const completed = progressRecords.filter(p => 
-        classAssignIds.has(p.assignment_id) && 
-        dateSet.has(p.tracking_date) && 
-        p.is_completed
-      ).length
+      const completed = progressRecords.filter(p => {
+        const pDate = p.tracking_date ? String(p.tracking_date).split('T')[0] : ''
+        const isDone = Boolean(p.is_completed) || (p.completed_value != null && Number(p.completed_value) > 0)
+        return classAssignIds.has(p.assignment_id) && dateSet.has(pDate) && isDone
+      }).length
 
       const rate = expected > 0 ? Math.min(100, Math.round((completed / expected) * 100)) : 0
 
@@ -143,7 +147,10 @@ export default function AnalyticsClient({
   // 3. Daily Completion Trend Data
   const dailyTrendData = useMemo(() => {
     return dateRange.map(d => {
-      const dayCompleted = relevantProgress.filter(p => p.tracking_date === d.dateStr).length
+      const dayCompleted = relevantProgress.filter(p => {
+        const pDate = p.tracking_date ? String(p.tracking_date).split('T')[0] : ''
+        return pDate === d.dateStr
+      }).length
       // Expected per day
       let expectedPerDay = 0
       filteredClasses.forEach(c => {

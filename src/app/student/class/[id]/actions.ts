@@ -69,6 +69,8 @@ export async function logZikrSession(
   revalidatePath(`/student/dashboard`)
   revalidatePath(`/student/assignments`)
   revalidatePath('/student', 'layout')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/analytics')
   return { success: true }
 }
 
@@ -162,6 +164,8 @@ export async function togglePrayer(
   revalidatePath(`/student/dashboard`)
   revalidatePath(`/student/assignments`)
   revalidatePath('/student', 'layout')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/analytics')
   return { success: true }
 }
 
@@ -264,5 +268,7 @@ export async function logExtraReadingSession(
   revalidatePath(`/student/assignments`)
   revalidatePath(`/student/analytics`)
   revalidatePath('/student', 'layout')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/analytics')
   return { success: true }
 }
