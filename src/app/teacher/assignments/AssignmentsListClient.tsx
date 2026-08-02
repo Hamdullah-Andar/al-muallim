@@ -10,6 +10,8 @@ type AssignmentInfo = {
   category: string
   title: string
   tracking_type: string
+  target_count?: number
+  unit?: string
   content: any
   is_daily: boolean
   created_at: string
