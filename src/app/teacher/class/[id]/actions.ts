@@ -73,10 +73,8 @@ export async function createAssignment(formData: FormData) {
         category,
         title,
         tracking_type: trackingType === 'percentage' ? 'counter' : trackingType,
-        // Save target_count and unit at the top level for easy access,
-        // AND inside content for backwards-compatibility
-        target_count: trackingType === 'counter' ? (parseInt(formData.get('target') as string) || 1) : null,
-        unit: trackingType === 'counter' ? ((formData.get('unit') as string) || 'Times') : null,
+        // target and unit are stored inside the content JSONB column (content.target, content.unit)
+        // ZikrTrackerRow reads from assignment.content?.target to get the correct value
         content,
         is_daily: true // Automatically regenerates every day!
       }
