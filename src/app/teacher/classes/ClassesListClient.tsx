@@ -13,6 +13,8 @@ type ClassInfo = {
   studentCount: number
   dailyAssignmentsCount: number
   createdAt: string
+  schedule_days?: string[] | null
+  schedule_time?: string | null
 }
 
 function getClassVisuals(className: string, index: number) {
@@ -34,15 +36,21 @@ function getClassVisuals(className: string, index: number) {
   ]
   const gradient = gradients[index % gradients.length]
 
-  const schedules = [
-    "Mon, Wed 4:00 PM",
-    "Tue, Thu 6:00 PM",
-    "Sunday 10:00 AM",
-    "Saturdays 2:00 PM"
-  ]
-  const schedule = schedules[index % schedules.length]
+  return { category, gradient }
+}
 
-  return { category, gradient, schedule }
+function formatClassSchedule(days: string[] | null | undefined, time: string | null | undefined): string {
+  if (!days || days.length === 0) return 'Schedule not set'
+  const timeStr = time ? ` · ${formatTime12h(time)}` : ''
+  return days.join(', ') + timeStr
+}
+
+function formatTime12h(time24: string): string {
+  if (!time24) return ''
+  const [h, m] = time24.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 || 12
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`
 }
 
 export default function ClassesListClient({
@@ -174,7 +182,8 @@ export default function ClassesListClient({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredClasses.map((c, index) => {
-            const { category, gradient, schedule } = getClassVisuals(c.name, index)
+            const { category, gradient } = getClassVisuals(c.name, index)
+            const scheduleDisplay = formatClassSchedule(c.schedule_days, c.schedule_time)
 
             return (
               <div 
@@ -211,8 +220,8 @@ export default function ClassesListClient({
                       <span>{c.studentCount} Students</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                      <span>{c.dailyAssignmentsCount} Habits</span>
+                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <span className="truncate normal-case font-medium">{scheduleDisplay}</span>
                     </div>
                   </div>
 

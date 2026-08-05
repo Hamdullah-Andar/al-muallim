@@ -11,12 +11,35 @@ export default function CreateClassModal() {
   // We store the newly generated code to show the user!
   const [generatedCode, setGeneratedCode] = useState<string | null>(null)
 
+  // Schedule state
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const [selectedDays, setSelectedDays] = useState<string[]>([])
+  const [scheduleTime, setScheduleTime] = useState('')
+
+  const toggleDay = (day: string) => {
+    setSelectedDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    )
+  }
+
+  const handleClose = () => {
+    setIsOpen(false)
+    setGeneratedCode(null)
+    setError(null)
+    setSelectedDays([])
+    setScheduleTime('')
+  }
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
 
     const formData = new FormData(e.currentTarget)
+    // Append selected days as a JSON string so we can parse in the action
+    formData.set('schedule_days', JSON.stringify(selectedDays))
+    formData.set('schedule_time', scheduleTime)
+
     const result = await createNewClass(formData)
 
     setIsLoading(false)
@@ -43,17 +66,13 @@ export default function CreateClassModal() {
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           
-          <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
             
             {/* Header */}
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
               <h2 className="text-xl font-bold">Create New Class</h2>
               <button 
-                onClick={() => {
-                  setIsOpen(false)
-                  setGeneratedCode(null)
-                  setError(null)
-                }}
+                onClick={handleClose}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
               >
                 ✕
@@ -61,7 +80,7 @@ export default function CreateClassModal() {
             </div>
 
             {/* Body */}
-            <div className="p-6">
+            <div className="p-6 max-h-[80vh] overflow-y-auto">
               
               {/* If a code was generated, show the success screen! */}
               {generatedCode ? (
@@ -79,10 +98,7 @@ export default function CreateClassModal() {
                   </div>
 
                   <button 
-                    onClick={() => {
-                      setIsOpen(false)
-                      setGeneratedCode(null)
-                    }}
+                    onClick={handleClose}
                     className="w-full bg-primary-600 hover:bg-primary-700 text-white py-3 rounded-lg font-medium transition-colors"
                   >
                     Done
@@ -90,7 +106,7 @@ export default function CreateClassModal() {
                 </div>
               ) : (
                 /* Otherwise, show the creation form */
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
                     <label className="block text-sm font-medium mb-1 opacity-70">Class Name</label>
                     <input 
@@ -106,10 +122,52 @@ export default function CreateClassModal() {
                     <label className="block text-sm font-medium mb-1 opacity-70">Description (Optional)</label>
                     <textarea 
                       name="description"
-                      rows={3}
+                      rows={2}
                       placeholder="What is this class about?"
                       className="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-black focus:ring-2 focus:ring-primary-500 outline-none transition-all resize-none"
                     ></textarea>
+                  </div>
+
+                  {/* Schedule Section */}
+                  <div className="border-t border-gray-100 dark:border-gray-800 pt-4 space-y-4">
+                    <p className="text-sm font-semibold text-gray-600 dark:text-gray-300">Class Schedule <span className="text-xs font-normal text-gray-400">(Optional — can be set later)</span></p>
+
+                    {/* Day Toggles */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Meeting Days</label>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {DAYS.map(day => (
+                          <button
+                            key={day}
+                            type="button"
+                            onClick={() => toggleDay(day)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
+                              selectedDays.includes(day)
+                                ? 'bg-primary-700 border-primary-700 text-white shadow-sm'
+                                : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:border-primary-400'
+                            }`}
+                          >
+                            {day}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedDays.length > 0 && (
+                        <p className="text-xs text-primary-600 dark:text-primary-400 font-medium mt-1.5">
+                          Selected: {selectedDays.join(', ')}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Time Picker */}
+                    <div>
+                      <label className="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Start Time</label>
+                      <input
+                        type="time"
+                        value={scheduleTime}
+                        onChange={e => setScheduleTime(e.target.value)}
+                        className="px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-black text-sm font-medium focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                      />
+                    </div>
                   </div>
 
                   {error && (
@@ -121,7 +179,7 @@ export default function CreateClassModal() {
                   <div className="pt-2 flex gap-3">
                     <button 
                       type="button"
-                      onClick={() => setIsOpen(false)}
+                      onClick={handleClose}
                       className="flex-1 py-3 rounded-lg font-medium border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                     >
                       Cancel

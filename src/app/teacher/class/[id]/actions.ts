@@ -3,6 +3,32 @@
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
 
+export async function updateClassSchedule(
+  classId: string,
+  scheduleDays: string[],
+  scheduleTime: string | null
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authorized')
+
+  const { error } = await supabase
+    .from('classes')
+    .update({
+      schedule_days: scheduleDays,
+      schedule_time: scheduleTime || null
+    })
+    .eq('id', classId)
+    .eq('teacher_id', user.id)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath(`/teacher/class/${classId}`)
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/classes')
+}
+
+
 export async function createAssignment(formData: FormData) {
   const supabase = await createClient()
   

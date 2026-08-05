@@ -44,7 +44,21 @@ function getClassVisuals(className: string, index: number) {
   ]
   const schedule = schedules[index % schedules.length]
 
-  return { category, gradient, schedule }
+  return { category, gradient }
+}
+
+function formatClassSchedule(days: string[] | null, time: string | null): string {
+  if (!days || days.length === 0) return 'Schedule not set'
+  const timeStr = time ? ` · ${formatTime12h(time)}` : ''
+  return days.join(', ') + timeStr
+}
+
+function formatTime12h(time24: string): string {
+  if (!time24) return ''
+  const [h, m] = time24.split(':').map(Number)
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const hour = h % 12 || 12
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`
 }
 
 export default async function TeacherDashboard() {
@@ -352,8 +366,9 @@ export default async function TeacherDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {activeClassesList.slice(0, 4).map((c, index) => {
-                  const { category, gradient, schedule } = getClassVisuals(c.name, index)
+                  const { category, gradient } = getClassVisuals(c.name, index)
                   const studentCount = studentCountMap[c.id] || 0
+                  const scheduleDisplay = formatClassSchedule(c.schedule_days, c.schedule_time)
 
                   return (
                     <div 
@@ -383,7 +398,7 @@ export default async function TeacherDashboard() {
                           </div>
                           <div className="flex items-center gap-2">
                             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                            <span className="truncate">{schedule}</span>
+                            <span className="truncate">{scheduleDisplay}</span>
                           </div>
                         </div>
 

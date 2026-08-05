@@ -64,7 +64,9 @@ export default async function TeacherClassesPage() {
     isActive: c.is_active !== false,
     studentCount: studentCountMap[c.id] || 0,
     dailyAssignmentsCount: dailyAssignmentCountMap[c.id] || 0,
-    createdAt: c.created_at
+    createdAt: c.created_at,
+    schedule_days: c.schedule_days || [],
+    schedule_time: c.schedule_time || null
   }))
 
   return (

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import CreateAssignmentButton from '@/components/CreateAssignmentButton'
-import { uploadClassBook, deleteClassBook, toggleClassActiveStatus, deleteAssignment } from './actions'
+import { uploadClassBook, deleteClassBook, toggleClassActiveStatus, deleteAssignment, updateClassSchedule } from './actions'
 import { createClient } from '@/utils/supabase/client'
 
 interface ClassDetailClientProps {
@@ -19,6 +19,45 @@ export default function ClassDetailClient({ classData, students = [], assignment
   const [isSubmittingBook, setIsSubmittingBook] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+
+  // Schedule editing state
+  const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false)
+  const [scheduleDays, setScheduleDays] = useState<string[]>(classData.schedule_days || [])
+  const [scheduleTime, setScheduleTime] = useState<string>(classData.schedule_time || '')
+  const [isSavingSchedule, setIsSavingSchedule] = useState(false)
+
+  function formatScheduleDisplay(days: string[], time: string) {
+    if (!days || days.length === 0) return 'Schedule not set'
+    const timeStr = time ? ` · ${formatTime12h(time)}` : ''
+    return days.join(', ') + timeStr
+  }
+
+  function formatTime12h(time24: string) {
+    if (!time24) return ''
+    const [h, m] = time24.split(':').map(Number)
+    const ampm = h >= 12 ? 'PM' : 'AM'
+    const hour = h % 12 || 12
+    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`
+  }
+
+  function toggleScheduleDay(day: string) {
+    setScheduleDays(prev =>
+      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+    )
+  }
+
+  async function handleSaveSchedule() {
+    setIsSavingSchedule(true)
+    try {
+      await updateClassSchedule(classData.id, scheduleDays, scheduleTime || null)
+      setIsEditingSchedule(false)
+    } catch (err: any) {
+      alert('Failed to save schedule: ' + err.message)
+    } finally {
+      setIsSavingSchedule(false)
+    }
+  }
 
   async function handleToggleArchive() {
     const action = classData.is_active !== false ? 'archive' : 'unarchive'
@@ -118,6 +157,73 @@ export default function ClassDetailClient({ classData, students = [], assignment
             <div className="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl text-center min-w-[200px] shadow-inner">
               <p className="text-xs uppercase tracking-widest font-bold opacity-70 mb-2">Class Code</p>
               <p className="text-4xl font-mono font-bold tracking-[0.2em]">{classData.class_code}</p>
+            </div>
+
+            {/* Schedule Display & Editor */}
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl w-full min-w-[200px] shadow-inner">
+              {!isEditingSchedule ? (
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-widest font-bold opacity-70 mb-1">Schedule</p>
+                    <p className="text-sm font-semibold">
+                      {formatScheduleDisplay(scheduleDays, scheduleTime)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setIsEditingSchedule(true)}
+                    className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors shrink-0"
+                    title="Edit schedule"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-xs uppercase tracking-widest font-bold opacity-70">Edit Schedule</p>
+                  {/* Day Toggles */}
+                  <div className="flex flex-wrap gap-1">
+                    {DAYS.map(day => (
+                      <button
+                        key={day}
+                        type="button"
+                        onClick={() => toggleScheduleDay(day)}
+                        className={`px-2 py-1 rounded-md text-xs font-bold border transition-all ${
+                          scheduleDays.includes(day)
+                            ? 'bg-white text-primary-900 border-white'
+                            : 'bg-white/10 text-white/70 border-white/20 hover:bg-white/20'
+                        }`}
+                      >
+                        {day}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Time Input */}
+                  <input
+                    type="time"
+                    value={scheduleTime}
+                    onChange={e => setScheduleTime(e.target.value)}
+                    className="w-full px-3 py-1.5 rounded-lg bg-white/10 border border-white/20 text-white text-sm font-medium focus:outline-none focus:bg-white/20"
+                  />
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => { setIsEditingSchedule(false); setScheduleDays(classData.schedule_days || []); setScheduleTime(classData.schedule_time || '') }}
+                      className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-white/10 hover:bg-white/20 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleSaveSchedule}
+                      disabled={isSavingSchedule}
+                      className="flex-1 py-1.5 rounded-lg text-xs font-bold bg-white text-primary-900 hover:bg-white/90 transition-colors disabled:opacity-50"
+                    >
+                      {isSavingSchedule ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             
             <button 
