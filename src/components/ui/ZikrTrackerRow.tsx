@@ -14,7 +14,9 @@ export default function ZikrTrackerRow({ assignment, initialProgress }: ZikrTrac
   const [isAnimating, setIsAnimating] = useState(false)
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-  const targetCount = assignment.target_count || 200 // Default to 200 based on master list
+  // Read target from content.target (where createAssignment stores it),
+  // fall back to top-level target_count, then 200 as last resort.
+  const targetCount = assignment.content?.target || assignment.target_count || 200
 
   const handleIncrement = () => {
     if (isCompleted) return
