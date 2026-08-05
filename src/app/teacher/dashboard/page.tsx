@@ -185,8 +185,9 @@ export default async function TeacherDashboard() {
     const assignmentIds = classAssignments?.map(a => a.id) || []
     
     if (assignmentIds.length > 0) {
+      // Build this week's dates: yesterday back to 7 days ago (excluding today)
       const dates: { dateStr: string; dayName: string }[] = []
-      for (let i = 6; i >= 0; i--) {
+      for (let i = 7; i >= 1; i--) {
         const d = new Date()
         d.setDate(d.getDate() - i)
         const dateStr = d.toISOString().split('T')[0]
@@ -194,9 +195,9 @@ export default async function TeacherDashboard() {
         dates.push({ dateStr, dayName })
       }
 
-      // Also build prior week dates (days 7-13 ago) for week-over-week comparison
+      // Prior week dates (days 8-14 ago) for week-over-week comparison
       const priorWeekDates: string[] = []
-      for (let i = 13; i >= 7; i--) {
+      for (let i = 14; i >= 8; i--) {
         const d = new Date()
         d.setDate(d.getDate() - i)
         priorWeekDates.push(d.toISOString().split('T')[0])

@@ -50,11 +50,13 @@ export default function AnalyticsClient({
   }, [filteredAssignments])
 
   // Get date strings array for the selected timeframe window
+  // Excludes today — starts from yesterday going back N days so that
+  // today's in-progress morning activities don't skew the completion %
   const dateRange = useMemo(() => {
     const dates: { dateStr: string; displayLabel: string; shortDay: string }[] = []
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     
-    for (let i = daysCount - 1; i >= 0; i--) {
+    for (let i = daysCount; i >= 1; i--) {
       const d = new Date()
       d.setDate(d.getDate() - i)
       const dateStr = d.toISOString().split('T')[0]
