@@ -172,6 +172,8 @@ export default async function TeacherDashboard() {
   // 4. Fetch daily completion rate for the last 7 days to make the Heatmap live
   const weeklyProgressData: { dayName: string; heightPercent: number; count: number }[] = []
   const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  let thisWeekTotal = 0
+  let lastWeekTotal = 0
   
   if (activeClassIds.length > 0) {
     const { data: classAssignments } = await supabase
@@ -192,13 +194,22 @@ export default async function TeacherDashboard() {
         dates.push({ dateStr, dayName })
       }
 
+      // Also build prior week dates (days 7-13 ago) for week-over-week comparison
+      const priorWeekDates: string[] = []
+      for (let i = 13; i >= 7; i--) {
+        const d = new Date()
+        d.setDate(d.getDate() - i)
+        priorWeekDates.push(d.toISOString().split('T')[0])
+      }
+
       const dateStrings = dates.map(d => d.dateStr)
+      const allDateStrings = [...dateStrings, ...priorWeekDates]
 
       const { data: progressRecords } = await supabase
         .from('student_progress')
         .select('tracking_date, is_completed')
         .in('assignment_id', assignmentIds)
-        .in('tracking_date', dateStrings)
+        .in('tracking_date', allDateStrings)
         .eq('is_completed', true)
 
       const completionsByDate: Record<string, number> = {}
@@ -217,6 +228,10 @@ export default async function TeacherDashboard() {
           count
         })
       })
+
+      // Compute week-over-week totals
+      thisWeekTotal = dateStrings.reduce((sum, d) => sum + (completionsByDate[d] || 0), 0)
+      lastWeekTotal = priorWeekDates.reduce((sum, d) => sum + (completionsByDate[d] || 0), 0)
     }
   }
 
@@ -229,6 +244,23 @@ export default async function TeacherDashboard() {
         heightPercent: 0,
         count: 0
       })
+    }
+  }
+
+  // Build the week-over-week message string
+  let weekOverWeekMessage: string
+  if (thisWeekTotal === 0 && lastWeekTotal === 0) {
+    weekOverWeekMessage = 'No activity tracked yet. Encourage students to complete their daily assignments!'
+  } else if (lastWeekTotal === 0) {
+    weekOverWeekMessage = `${thisWeekTotal} task${thisWeekTotal !== 1 ? 's' : ''} completed this week — great start!`
+  } else {
+    const diffPercent = Math.round(((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100)
+    if (diffPercent > 0) {
+      weekOverWeekMessage = `Activity is ${diffPercent}% higher this week compared to last week. Keep up the great momentum!`
+    } else if (diffPercent < 0) {
+      weekOverWeekMessage = `Activity is ${Math.abs(diffPercent)}% lower this week compared to last week. Encourage your students!`
+    } else {
+      weekOverWeekMessage = 'Activity is consistent with last week. Keep up the great work!'
     }
   }
 
@@ -379,7 +411,7 @@ export default async function TeacherDashboard() {
           <div className="bg-primary-900 text-white p-8 rounded-xl shadow-md relative overflow-hidden">
             <div className="relative z-10">
               <h2 className="text-xl font-bold mb-2">Student Progress Heatmap</h2>
-              <p className="opacity-80 mb-8 max-w-md">Activity is {completionRate > 0 ? `${completionRate}%` : '15%'} higher this week compared to last month. Keep up the great momentum!</p>
+              <p className="opacity-80 mb-8 max-w-md">{weekOverWeekMessage}</p>
               
               {/* Dynamic Live Graph Bars */}
               <div className="flex items-end justify-between gap-2 h-32 opacity-90">
