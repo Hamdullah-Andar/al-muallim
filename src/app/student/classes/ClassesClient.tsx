@@ -11,7 +11,9 @@ type ClassData = {
   teacherName: string
   category: string
   imageUrl: string
-  progress: number
+  progress: number          // this week's completion %
+  lastWeekProgress: number  // last week's completion %
+  trend: 'up' | 'down' | 'same'
   isActive?: boolean
 }
 
@@ -214,17 +216,44 @@ export default function ClassesClient({
                </div>
                
                <div className="mt-auto">
-                 {/* Progress Info */}
+                 {/* Weekly Completion + Trend */}
                  <div className="flex justify-between items-center mb-2">
-                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Course Progress</span>
-                   <span className="text-xs font-extrabold text-[#092B2B] dark:text-emerald-400">{item.progress}%</span>
+                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">This Week</span>
+                   <span className="flex items-center gap-1">
+                     <span className="text-xs font-extrabold text-[#092B2B] dark:text-emerald-400">{item.progress}%</span>
+                     {/* Trend arrow */}
+                     {item.trend === 'up' && (
+                       <span title={`+${item.progress - item.lastWeekProgress}% vs last week`}
+                         className="flex items-center gap-0.5 text-[10px] font-extrabold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded-full">
+                         <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+                         {item.lastWeekProgress > 0 ? `${item.progress - item.lastWeekProgress}%` : 'New'}
+                       </span>
+                     )}
+                     {item.trend === 'down' && (
+                       <span title={`${item.progress - item.lastWeekProgress}% vs last week`}
+                         className="flex items-center gap-0.5 text-[10px] font-extrabold text-red-500 bg-red-50 dark:bg-red-950/30 px-1.5 py-0.5 rounded-full">
+                         <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                         {item.progress - item.lastWeekProgress}%
+                       </span>
+                     )}
+                     {item.trend === 'same' && item.progress > 0 && (
+                       <span className="flex items-center gap-0.5 text-[10px] font-extrabold text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded-full">
+                         <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14" /></svg>
+                         Same
+                       </span>
+                     )}
+                   </span>
                  </div>
                  
-                 {/* Progress Bar */}
+                 {/* Completion Bar */}
                  <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full mb-6 overflow-hidden">
                    <div 
-                     className="h-full bg-[#092B2B] dark:bg-emerald-500 rounded-full transition-all duration-1000"
-                     style={{ width: `${item.progress}%` }}
+                     className={`h-full rounded-full transition-all duration-1000 ${
+                       item.progress === 0 ? 'bg-gray-200' :
+                       item.progress >= 80 ? 'bg-emerald-500' :
+                       item.progress >= 50 ? 'bg-[#092B2B]' : 'bg-amber-400'
+                     }`}
+                     style={{ width: `${Math.max(item.progress, 2)}%` }}
                    ></div>
                  </div>
 
