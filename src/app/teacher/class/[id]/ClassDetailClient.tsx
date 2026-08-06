@@ -3,7 +3,8 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import CreateAssignmentButton from '@/components/CreateAssignmentButton'
-import { uploadClassBook, deleteClassBook, toggleClassActiveStatus, deleteAssignment, updateClassSchedule, removeStudent, restoreStudent } from './actions'
+import StudentReportModal from '@/components/StudentReportModal'
+import { uploadClassBook, deleteClassBook, toggleClassActiveStatus, deleteAssignment, updateClassSchedule, removeStudent, restoreStudent, getStudentActivityReport } from './actions'
 import { createClient } from '@/utils/supabase/client'
 
 interface ClassDetailClientProps {
@@ -21,6 +22,7 @@ export default function ClassDetailClient({ classData, students = [], assignment
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [removingStudentId, setRemovingStudentId] = useState<string | null>(null)
   const [showRemovedSection, setShowRemovedSection] = useState(false)
+  const [selectedReportStudent, setSelectedReportStudent] = useState<{ id: string; name: string } | null>(null)
 
   // Schedule editing state
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -503,6 +505,13 @@ export default function ClassDetailClient({ classData, students = [], assignment
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setSelectedReportStudent({ id: student.student_id, name: student.profiles?.full_name || 'Student' })}
+                        className="text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/40 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm active:scale-95"
+                      >
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 012 2h2a2 2 0 002-2z" /></svg>
+                        <span>Activity Report</span>
+                      </button>
                       <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">Active</span>
                       <button
                         onClick={async () => {
@@ -552,22 +561,31 @@ export default function ClassDetailClient({ classData, students = [], assignment
                             <p className="text-xs opacity-60">Removed from class</p>
                           </div>
                         </div>
-                        <button
-                          onClick={async () => {
-                            setRemovingStudentId(student.student_id)
-                            try { await restoreStudent(classData.id, student.student_id) }
-                            catch (e: any) { alert('Error: ' + e.message) }
-                            finally { setRemovingStudentId(null) }
-                          }}
-                          disabled={removingStudentId === student.student_id}
-                          className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
-                        >
-                          {removingStudentId === student.student_id
-                            ? <div className="w-3 h-3 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin" />
-                            : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-                          }
-                          Restore
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSelectedReportStudent({ id: student.student_id, name: student.profiles?.full_name || 'Student' })}
+                            className="text-xs font-bold text-gray-700 dark:text-gray-300 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002-2z" /></svg>
+                            Report
+                          </button>
+                          <button
+                            onClick={async () => {
+                              setRemovingStudentId(student.student_id)
+                              try { await restoreStudent(classData.id, student.student_id) }
+                              catch (e: any) { alert('Error: ' + e.message) }
+                              finally { setRemovingStudentId(null) }
+                            }}
+                            disabled={removingStudentId === student.student_id}
+                            className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                          >
+                            {removingStudentId === student.student_id
+                              ? <div className="w-3 h-3 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin" />
+                              : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                            }
+                            Restore
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -861,6 +879,15 @@ export default function ClassDetailClient({ classData, students = [], assignment
         </div>
       )}
 
+      {/* STUDENT ACTIVITY REPORT MODAL */}
+      <StudentReportModal
+        isOpen={!!selectedReportStudent}
+        onClose={() => setSelectedReportStudent(null)}
+        classId={classData.id}
+        studentId={selectedReportStudent?.id || ''}
+        studentName={selectedReportStudent?.name || ''}
+        fetchReportAction={getStudentActivityReport}
+      />
     </div>
   )
 }

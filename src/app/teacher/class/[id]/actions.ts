@@ -264,3 +264,207 @@ export async function deleteAssignment(assignmentId: string, classId?: string) {
   }
   revalidatePath('/teacher/assignments')
 }
+
+export async function getStudentActivityReport(
+  classId: string,
+  studentId: string,
+  daysCount: number = 7
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authorized")
+
+  // Verify class teacher
+  const { data: classData } = await supabase
+    .from('classes')
+    .select('id, name')
+    .eq('id', classId)
+    .eq('teacher_id', user.id)
+    .single()
+  if (!classData) throw new Error("Not authorized or class not found")
+
+  // Fetch student profile
+  const { data: studentProfile } = await supabase
+    .from('profiles')
+    .select('full_name, email')
+    .eq('id', studentId)
+    .single()
+
+  // Generate date list (excluding today as daily activities might be in progress)
+  const dates: string[] = []
+  for (let i = daysCount; i >= 1; i--) {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    dates.push(d.toISOString().split('T')[0])
+  }
+
+  // Fetch class assignments
+  const { data: assignments } = await supabase
+    .from('assignments')
+    .select('*')
+    .eq('class_id', classId)
+
+  const classAssignments = assignments || []
+  const assignmentIds = classAssignments.map(a => a.id)
+
+  let progressRecords: any[] = []
+  if (assignmentIds.length > 0 && dates.length > 0) {
+    const { data: records } = await supabase
+      .from('student_progress')
+      .select('*')
+      .eq('student_id', studentId)
+      .in('assignment_id', assignmentIds)
+      .in('tracking_date', dates)
+
+    progressRecords = records || []
+  }
+
+  // Progress Map: key = `${assignment_id}_${tracking_date}`
+  const progressMap = new Map<string, any>()
+  progressRecords.forEach(r => {
+    progressMap.set(`${r.assignment_id}_${r.tracking_date}`, r)
+  })
+
+  // 1. Overall stats
+  const totalPossibleHabitEntries = classAssignments.length * dates.length
+  let completedHabitEntries = 0
+  
+  // Calculate per date details & daily trend
+  const dailyTrend = dates.map(date => {
+    let dayCompleted = 0
+    classAssignments.forEach(a => {
+      const rec = progressMap.get(`${a.id}_${date}`)
+      if (rec?.is_completed) {
+        dayCompleted++
+        completedHabitEntries++
+      }
+    })
+
+    const dateObj = new Date(date + 'T00:00:00')
+    const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+    const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    const total = classAssignments.length
+    const pct = total > 0 ? Math.round((dayCompleted / total) * 100) : 0
+
+    return {
+      date,
+      formattedDate,
+      dayName,
+      completed: dayCompleted,
+      total,
+      percentage: pct
+    }
+  })
+
+  // Calculate Active Days (days with at least 1 habit completed)
+  const activeDaysCount = dailyTrend.filter(d => d.completed > 0).length
+
+  // Calculate Streak (consecutive active days backwards from yesterday)
+  let streak = 0
+  for (let i = dailyTrend.length - 1; i >= 0; i--) {
+    if (dailyTrend[i].completed > 0) {
+      streak++
+    } else {
+      break
+    }
+  }
+
+  // 2. Category Breakdown
+  const categoryMap = new Map<string, {
+    category: string
+    completedCount: number
+    totalTarget: number
+    totalValueSum: number
+    unit: string
+  }>()
+
+  classAssignments.forEach(a => {
+    const cat = a.category || 'General'
+    const unit = a.content?.unit || a.unit || (cat === 'Zikr' ? 'Times' : cat === 'Sport' ? 'Minutes' : '')
+    
+    if (!categoryMap.has(cat)) {
+      categoryMap.set(cat, {
+        category: cat,
+        completedCount: 0,
+        totalTarget: 0,
+        totalValueSum: 0,
+        unit
+      })
+    }
+
+    const catData = categoryMap.get(cat)!
+    catData.totalTarget += dates.length
+
+    dates.forEach(date => {
+      const rec = progressMap.get(`${a.id}_${date}`)
+      if (rec?.is_completed) {
+        catData.completedCount++
+      }
+      if (rec?.completed_value) {
+        catData.totalValueSum += Number(rec.completed_value) || 0
+      }
+    })
+  })
+
+  const categoryBreakdown = Array.from(categoryMap.values()).map(c => ({
+    ...c,
+    percentage: c.totalTarget > 0 ? Math.round((c.completedCount / c.totalTarget) * 100) : 0
+  }))
+
+  // 3. Habit-by-Habit Breakdown & Best/Worst Habits
+  const habitBreakdown = classAssignments.map(a => {
+    let completedCount = 0
+    let valueSum = 0
+    dates.forEach(date => {
+      const rec = progressMap.get(`${a.id}_${date}`)
+      if (rec?.is_completed) completedCount++
+      if (rec?.completed_value) valueSum += Number(rec.completed_value) || 0
+    })
+
+    const targetVal = a.content?.target ?? a.target_count ?? 0
+    const unit = a.content?.unit || a.unit || ''
+    const percentage = dates.length > 0 ? Math.round((completedCount / dates.length) * 100) : 0
+
+    return {
+      id: a.id,
+      title: a.title,
+      category: a.category,
+      trackingType: a.tracking_type,
+      targetVal,
+      unit,
+      completedDays: completedCount,
+      totalDays: dates.length,
+      percentage,
+      totalValueSum: valueSum
+    }
+  })
+
+  // Sort habits by percentage to identify top and lowest
+  const sortedHabits = [...habitBreakdown].sort((a, b) => b.percentage - a.percentage)
+  const topHabit = sortedHabits[0] || null
+  const lowestHabit = sortedHabits[sortedHabits.length - 1] || null
+
+  const overallPercentage = totalPossibleHabitEntries > 0
+    ? Math.round((completedHabitEntries / totalPossibleHabitEntries) * 100)
+    : 0
+
+  return {
+    studentName: studentProfile?.full_name || 'Student',
+    studentEmail: studentProfile?.email || '',
+    className: classData.name,
+    daysCount,
+    startDate: dates[0],
+    endDate: dates[dates.length - 1],
+    overallPercentage,
+    completedHabitEntries,
+    totalPossibleHabitEntries,
+    activeDaysCount,
+    totalDays: dates.length,
+    streak,
+    categoryBreakdown,
+    habitBreakdown,
+    dailyTrend,
+    topHabit,
+    lowestHabit
+  }
+}
