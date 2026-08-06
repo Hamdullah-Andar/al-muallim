@@ -49,9 +49,6 @@ export default async function JoinedClassesPage() {
   ]
 
   const mappedClasses = rawClasses.map((e: any, index: number) => {
-    // Generate a stable pseudo-random progress between 0 and 100 based on index
-    const progress = Math.abs(Math.sin(index + 1) * 100).toFixed(0)
-
     return {
       id: e.class_id,
       name: e.classes?.name || 'Unknown Class',
@@ -60,7 +57,7 @@ export default async function JoinedClassesPage() {
       teacherName: teacherMap[e.classes?.teacher_id] || 'Dr. Instructor',
       category: mockCategories[index % mockCategories.length],
       imageUrl: mockImages[index % mockImages.length],
-      progress: parseInt(progress, 10),
+      progress: 0, // Real progress computed on the class detail page; 0 here is a safe default
       isActive: e.classes?.is_active !== false
     }
   })

@@ -29,10 +29,13 @@ export default function ClassesClient({
   const [showSortDropdown, setShowSortDropdown] = useState(false)
 
   // Filter classes based on selected tab
+  // "In Progress" = class is still active (teacher hasn't archived it)
+  // "Completed"   = class has been archived/closed by the teacher
+  // This mirrors the teacher-side filter which uses isActive status
   const filteredClasses = classes.filter(c => {
     if (filter === 'All') return true;
-    if (filter === 'In Progress') return c.progress > 0 && c.progress < 100;
-    if (filter === 'Completed') return c.progress === 100;
+    if (filter === 'In Progress') return c.isActive === true;
+    if (filter === 'Completed') return c.isActive === false;
     return true;
   });
 
