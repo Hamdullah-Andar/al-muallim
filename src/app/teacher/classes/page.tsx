@@ -35,6 +35,7 @@ export default async function TeacherClassesPage() {
       .from('class_students')
       .select('class_id')
       .in('class_id', classIds)
+      .eq('is_active', true)
     
     enrollments?.forEach((e: any) => {
       studentCountMap[e.class_id] = (studentCountMap[e.class_id] || 0) + 1

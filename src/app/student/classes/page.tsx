@@ -20,6 +20,7 @@ export default async function JoinedClassesPage() {
     .from('class_students')
     .select('class_id, classes(name, description, teacher_id, is_active)')
     .eq('student_id', user.id)
+    .eq('is_active', true)
 
   const rawClasses = enrollments || []
   const classIds = rawClasses.map((e: any) => e.class_id).filter(Boolean)

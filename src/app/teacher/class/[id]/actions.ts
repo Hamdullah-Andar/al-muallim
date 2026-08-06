@@ -28,6 +28,43 @@ export async function updateClassSchedule(
   revalidatePath('/teacher/classes')
 }
 
+export async function removeStudent(classId: string, studentId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authorized')
+
+  const { data: classRow } = await supabase
+    .from('classes').select('id').eq('id', classId).eq('teacher_id', user.id).single()
+  if (!classRow) throw new Error('Not authorized')
+
+  const { error } = await supabase
+    .from('class_students')
+    .update({ is_active: false })
+    .eq('class_id', classId)
+    .eq('student_id', studentId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath(`/teacher/class/${classId}`)
+}
+
+export async function restoreStudent(classId: string, studentId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authorized')
+
+  const { data: classRow } = await supabase
+    .from('classes').select('id').eq('id', classId).eq('teacher_id', user.id).single()
+  if (!classRow) throw new Error('Not authorized')
+
+  const { error } = await supabase
+    .from('class_students')
+    .update({ is_active: true })
+    .eq('class_id', classId)
+    .eq('student_id', studentId)
+
+  if (error) throw new Error(error.message)
+  revalidatePath(`/teacher/class/${classId}`)
+}
 
 export async function createAssignment(formData: FormData) {
   const supabase = await createClient()

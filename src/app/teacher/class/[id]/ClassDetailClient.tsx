@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import CreateAssignmentButton from '@/components/CreateAssignmentButton'
-import { uploadClassBook, deleteClassBook, toggleClassActiveStatus, deleteAssignment, updateClassSchedule } from './actions'
+import { uploadClassBook, deleteClassBook, toggleClassActiveStatus, deleteAssignment, updateClassSchedule, removeStudent, restoreStudent } from './actions'
 import { createClient } from '@/utils/supabase/client'
 
 interface ClassDetailClientProps {
@@ -19,6 +19,8 @@ export default function ClassDetailClient({ classData, students = [], assignment
   const [isSubmittingBook, setIsSubmittingBook] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [removingStudentId, setRemovingStudentId] = useState<string | null>(null)
+  const [showRemovedSection, setShowRemovedSection] = useState(false)
 
   // Schedule editing state
   const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -474,36 +476,107 @@ export default function ClassDetailClient({ classData, students = [], assignment
       )}
 
       {/* TAB 2: STUDENTS */}
-      {activeTab === 'students' && (
-        <div className="bg-white dark:bg-black/40 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm overflow-hidden p-6 md:p-8">
-          <div className="flex justify-between items-center mb-6 border-b border-black/5 dark:border-white/5 pb-6">
-            <div>
-              <h2 className="text-2xl font-bold">Enrolled Students ({students.length})</h2>
-              <p className="text-sm opacity-60 font-medium mt-1">Class Code: <strong className="font-mono text-primary-600">{classData.class_code}</strong></p>
+      {activeTab === 'students' && (() => {
+        const activeStudents = students.filter((s: any) => s.is_active !== false)
+        const removedStudents = students.filter((s: any) => s.is_active === false)
+        return (
+          <div className="bg-white dark:bg-black/40 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm overflow-hidden p-6 md:p-8">
+            <div className="flex justify-between items-center mb-6 border-b border-black/5 dark:border-white/5 pb-6">
+              <div>
+                <h2 className="text-2xl font-bold">Enrolled Students ({activeStudents.length})</h2>
+                <p className="text-sm opacity-60 font-medium mt-1">Class Code: <strong className="font-mono text-primary-600">{classData.class_code}</strong></p>
+              </div>
             </div>
-          </div>
-          {students.length > 0 ? (
-            <div className="divide-y divide-black/5 dark:divide-white/5">
-              {students.map((student) => (
-                <div key={student.student_id} className="py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full flex items-center justify-center font-bold text-lg">
-                      {student.profiles?.full_name?.charAt(0) || 'S'}
+
+            {/* Active students */}
+            {activeStudents.length > 0 ? (
+              <div className="divide-y divide-black/5 dark:divide-white/5">
+                {activeStudents.map((student: any) => (
+                  <div key={student.student_id} className="py-4 flex items-center justify-between group">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 rounded-full flex items-center justify-center font-bold text-lg">
+                        {student.profiles?.full_name?.charAt(0) || 'S'}
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg">{student.profiles?.full_name || 'Unknown Student'}</p>
+                        <p className="text-xs opacity-60">Student ID: {student.student_id}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-lg">{student.profiles?.full_name || 'Unknown Student'}</p>
-                      <p className="text-xs opacity-60">Student ID: {student.student_id}</p>
+                    <div className="flex items-center gap-3">
+                      <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">Active</span>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`Remove ${student.profiles?.full_name || 'this student'} from class? They can be restored later.`)) return
+                          setRemovingStudentId(student.student_id)
+                          try { await removeStudent(classData.id, student.student_id) }
+                          catch (e: any) { alert('Error: ' + e.message) }
+                          finally { setRemovingStudentId(null) }
+                        }}
+                        disabled={removingStudentId === student.student_id}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 opacity-0 group-hover:opacity-100"
+                        title="Remove student from class"
+                      >
+                        {removingStudentId === student.student_id
+                          ? <div className="w-4 h-4 border-2 border-red-300 border-t-red-600 rounded-full animate-spin" />
+                          : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" /></svg>
+                        }
+                      </button>
                     </div>
                   </div>
-                  <span className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">Active</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-center py-12 opacity-60">No students enrolled yet.</p>
-          )}
-        </div>
-      )}
+                ))}
+              </div>
+            ) : (
+              <p className="text-center py-12 opacity-60">No active students enrolled.</p>
+            )}
+
+            {/* Removed students section */}
+            {removedStudents.length > 0 && (
+              <div className="mt-8 border-t border-black/5 dark:border-white/5 pt-6">
+                <button
+                  onClick={() => setShowRemovedSection(v => !v)}
+                  className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors mb-4"
+                >
+                  <svg className={`w-4 h-4 transition-transform ${showRemovedSection ? 'rotate-90' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                  Removed Students ({removedStudents.length})
+                </button>
+                {showRemovedSection && (
+                  <div className="divide-y divide-black/5 dark:divide-white/5 opacity-70">
+                    {removedStudents.map((student: any) => (
+                      <div key={student.student_id} className="py-4 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-gray-100 dark:bg-gray-800 text-gray-400 rounded-full flex items-center justify-center font-bold text-lg">
+                            {student.profiles?.full_name?.charAt(0) || 'S'}
+                          </div>
+                          <div>
+                            <p className="font-bold text-lg text-gray-500 line-through">{student.profiles?.full_name || 'Unknown Student'}</p>
+                            <p className="text-xs opacity-60">Removed from class</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            setRemovingStudentId(student.student_id)
+                            try { await restoreStudent(classData.id, student.student_id) }
+                            catch (e: any) { alert('Error: ' + e.message) }
+                            finally { setRemovingStudentId(null) }
+                          }}
+                          disabled={removingStudentId === student.student_id}
+                          className="text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+                        >
+                          {removingStudentId === student.student_id
+                            ? <div className="w-3 h-3 border-2 border-emerald-300 border-t-emerald-600 rounded-full animate-spin" />
+                            : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
+                          }
+                          Restore
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* TAB 3: ASSIGNMENTS */}
       {activeTab === 'assignments' && (

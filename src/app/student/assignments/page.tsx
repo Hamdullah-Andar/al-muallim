@@ -20,6 +20,7 @@ export default async function StudentAssignmentsPage() {
     .from('class_students')
     .select('class_id, classes(id, name, description, teacher_id)')
     .eq('student_id', user.id)
+    .eq('is_active', true)
 
   const classIds = enrollments?.map(e => e.class_id) || []
   

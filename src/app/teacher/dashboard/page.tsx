@@ -93,6 +93,7 @@ export default async function TeacherDashboard() {
       .from('class_students')
       .select('class_id, student_id')
       .in('class_id', activeClassIds)
+      .eq('is_active', true)
     
     if (enrollments) {
       const uniqueStudentIds = new Set<string>()

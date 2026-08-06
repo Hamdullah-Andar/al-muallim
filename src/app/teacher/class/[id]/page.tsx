@@ -21,14 +21,16 @@ export default async function ClassDetail({ params }: { params: Promise<{ id: st
     notFound()
   }
 
-  // Fetch students enrolled in this class
+  // Fetch ALL students (active + removed) so teacher can see both sections
   const { data: students } = await supabase
     .from('class_students')
     .select(`
       student_id,
+      is_active,
       profiles!student_id ( full_name )
     `)
     .eq('class_id', id)
+    .order('is_active', { ascending: false }) // active first
 
   // Fetch active assignments for this class
   const { data: assignments } = await supabase
