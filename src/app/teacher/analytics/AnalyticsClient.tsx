@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
+import Link from 'next/link'
 
 type ClassItem = { id: string; name: string; code: string }
 type StudentItem = { studentId: string; fullName: string; email: string; classId: string; className: string; joinedAt: string }
@@ -49,9 +50,13 @@ export default function AnalyticsClient({
     return new Set(filteredAssignments.map(a => a.id))
   }, [filteredAssignments])
 
-  // Get date strings array for the selected timeframe window
-  // Excludes today — starts from yesterday going back N days so that
-  // today's in-progress morning activities don't skew the completion %
+  // Extract all unique active categories dynamically from filtered assignments
+  const activeCategories = useMemo(() => {
+    const cats = Array.from(new Set(filteredAssignments.map(a => a.category || 'General'))).sort()
+    return cats.length > 0 ? cats : ['Prayer', 'Zikr', 'Reading']
+  }, [filteredAssignments])
+
+  // Get date strings array for the selected timeframe window (excludes today)
   const dateRange = useMemo(() => {
     const dates: { dateStr: string; displayLabel: string; shortDay: string }[] = []
     const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -75,7 +80,7 @@ export default function AnalyticsClient({
 
   const dateSet = useMemo(() => new Set(dateRange.map(d => d.dateStr)), [dateRange])
 
-  // Filter progress records within the selected date range and class filter
+  // Filter progress records within selected date range and class filter
   const relevantProgress = useMemo(() => {
     return progressRecords.filter(p => {
       const pDate = p.tracking_date ? String(p.tracking_date).split('T')[0] : ''
@@ -94,14 +99,21 @@ export default function AnalyticsClient({
     return ids.size
   }, [filteredStudents])
 
-  // Total expected task completions in period: 
-  // (daily assignments for class) * (students in class) * (number of days in timeframe)
   const totalExpectedInPeriod = useMemo(() => {
     let expected = 0
     filteredClasses.forEach(c => {
       const classStudentsCount = students.filter(s => s.classId === c.id).length
-      const classDailyAssignmentsCount = assignments.filter(a => a.classId === c.id && a.isDaily).length
-      expected += classStudentsCount * classDailyAssignmentsCount * daysCount
+      const classDailyAssignments = assignments.filter(a => a.classId === c.id && a.isDaily)
+      
+      classDailyAssignments.forEach(a => {
+        const cat = a.category || 'General'
+        if (cat === 'Prayer') {
+          // Prayer is 5 prayers daily per student
+          expected += classStudentsCount * 5 * daysCount
+        } else {
+          expected += classStudentsCount * daysCount
+        }
+      })
     })
     return expected
   }, [filteredClasses, students, assignments, daysCount])
@@ -119,7 +131,16 @@ export default function AnalyticsClient({
       const classAssignments = assignments.filter(a => a.classId === c.id)
       const classAssignIds = new Set(classAssignments.map(a => a.id))
       
-      const expected = classStudents.length * classAssignments.filter(a => a.isDaily).length * daysCount
+      let expected = 0
+      classAssignments.filter(a => a.isDaily).forEach(a => {
+        const cat = a.category || 'General'
+        if (cat === 'Prayer') {
+          expected += classStudents.length * 5 * daysCount
+        } else {
+          expected += classStudents.length * daysCount
+        }
+      })
+
       const completed = progressRecords.filter(p => {
         const pDate = p.tracking_date ? String(p.tracking_date).split('T')[0] : ''
         const isDone = Boolean(p.is_completed) || (p.completed_value != null && Number(p.completed_value) > 0)
@@ -140,7 +161,6 @@ export default function AnalyticsClient({
     })
   }, [classes, students, assignments, progressRecords, dateSet, daysCount])
 
-  // Top performing class
   const topClass = useMemo(() => {
     if (classPerformanceList.length === 0) return null
     return [...classPerformanceList].sort((a, b) => b.rate - a.rate)[0]
@@ -153,12 +173,20 @@ export default function AnalyticsClient({
         const pDate = p.tracking_date ? String(p.tracking_date).split('T')[0] : ''
         return pDate === d.dateStr
       }).length
-      // Expected per day
+
       let expectedPerDay = 0
       filteredClasses.forEach(c => {
         const classStudentsCount = students.filter(s => s.classId === c.id).length
-        const classDailyAssignCount = assignments.filter(a => a.classId === c.id && a.isDaily).length
-        expectedPerDay += classStudentsCount * classDailyAssignCount
+        const classDailyAssignments = assignments.filter(a => a.classId === c.id && a.isDaily)
+        
+        classDailyAssignments.forEach(a => {
+          const cat = a.category || 'General'
+          if (cat === 'Prayer') {
+            expectedPerDay += classStudentsCount * 5
+          } else {
+            expectedPerDay += classStudentsCount
+          }
+        })
       })
 
       const rate = expectedPerDay > 0 
@@ -187,7 +215,6 @@ export default function AnalyticsClient({
       categoriesMap[catName].totalAssigned += 1
     })
 
-    // Count completions for each category
     relevantProgress.forEach(p => {
       const assign = assignments.find(a => a.id === p.assignment_id)
       if (assign) {
@@ -199,7 +226,6 @@ export default function AnalyticsClient({
     })
 
     return Object.values(categoriesMap).map(cat => {
-      // Calculate category score relative to total completed tasks
       const percent = totalCompletedInPeriod > 0
         ? Math.round((cat.completedCount / totalCompletedInPeriod) * 100)
         : 0
@@ -213,32 +239,176 @@ export default function AnalyticsClient({
     })
   }, [filteredAssignments, relevantProgress, assignments, totalCompletedInPeriod])
 
-  // 5. Student Progress Leaderboard
+  // 5. Enhanced Student Roster & Leaderboard with Dynamic Categories & Domain Rules
   const studentLeaderboard = useMemo(() => {
-    // Unique students from filtered list
-    const studentMap: Record<string, { studentId: string; fullName: string; className: string; email: string; completedCount: number }> = {}
+    const studentMap: Record<string, {
+      studentId: string
+      fullName: string
+      className: string
+      classId: string
+      email: string
+      completedCount: number
+      totalExpected: number
+      adherenceRate: number
+      categoryValues: Record<string, {
+        formatted: string
+        rawCompleted: number
+        totalVolume: number
+        completedDays: number
+      }>
+    }> = {}
 
     filteredStudents.forEach(s => {
-      if (!studentMap[s.studentId]) {
-        studentMap[s.studentId] = {
-          studentId: s.studentId,
-          fullName: s.fullName,
-          className: s.className,
-          email: s.email,
-          completedCount: 0
+      const classDailyAssignments = assignments.filter(a => a.classId === s.classId && a.isDaily)
+      
+      let expectedTasks = 0
+      classDailyAssignments.forEach(a => {
+        const cat = a.category || 'General'
+        if (cat === 'Prayer') {
+          expectedTasks += 5 * daysCount
+        } else {
+          expectedTasks += daysCount
         }
+      })
+
+      const categoryValues: Record<string, { formatted: string; rawCompleted: number; totalVolume: number; completedDays: number }> = {}
+      activeCategories.forEach(cat => {
+        categoryValues[cat] = { formatted: '-', rawCompleted: 0, totalVolume: 0, completedDays: 0 }
+      })
+
+      studentMap[s.studentId] = {
+        studentId: s.studentId,
+        fullName: s.fullName,
+        className: s.className,
+        classId: s.classId,
+        email: s.email,
+        completedCount: 0,
+        totalExpected: expectedTasks,
+        adherenceRate: 0,
+        categoryValues
       }
     })
 
-    // Add completion count
+    // Map progress records per student per category
+    const studentCatDatesMap: Record<string, Record<string, Set<string>>> = {}
+    const studentCatPctSumMap: Record<string, Record<string, { sum: number; count: number }>> = {}
+
     relevantProgress.forEach(p => {
-      if (studentMap[p.student_id]) {
-        studentMap[p.student_id].completedCount += 1
+      const studentObj = studentMap[p.student_id]
+      if (!studentObj) return
+
+      const assign = assignments.find(a => a.id === p.assignment_id)
+      if (!assign) return
+
+      const cat = assign.category || 'General'
+      const val = Number(p.completed_value) || 1
+      const pDate = p.tracking_date ? String(p.tracking_date).split('T')[0] : ''
+
+      if (!studentObj.categoryValues[cat]) {
+        studentObj.categoryValues[cat] = { formatted: '-', rawCompleted: 0, totalVolume: 0, completedDays: 0 }
       }
+      const catValObj = studentObj.categoryValues[cat]
+      catValObj.rawCompleted += 1
+      catValObj.totalVolume += val
+
+      if (!studentCatDatesMap[p.student_id]) studentCatDatesMap[p.student_id] = {}
+      if (!studentCatDatesMap[p.student_id][cat]) studentCatDatesMap[p.student_id][cat] = new Set()
+      if (p.is_completed) {
+        studentCatDatesMap[p.student_id][cat].add(pDate)
+      }
+
+      if (assign.trackingType === 'percentage') {
+        if (!studentCatPctSumMap[p.student_id]) studentCatPctSumMap[p.student_id] = {}
+        if (!studentCatPctSumMap[p.student_id][cat]) studentCatPctSumMap[p.student_id][cat] = { sum: 0, count: 0 }
+        studentCatPctSumMap[p.student_id][cat].sum += val
+        studentCatPctSumMap[p.student_id][cat].count += 1
+      }
+    })
+
+    // Format output strings per domain rules and sum true completed tasks
+    Object.values(studentMap).forEach(s => {
+      let trueCompletedTasks = 0
+
+      activeCategories.forEach(cat => {
+        const catValObj = s.categoryValues[cat]
+        const classDailyAssignments = assignments.filter(a => a.classId === s.classId && (a.category || 'General') === cat && a.isDaily)
+        const completedDays = studentCatDatesMap[s.studentId]?.[cat]?.size || 0
+        catValObj.completedDays = completedDays
+
+        if (classDailyAssignments.length === 0) {
+          catValObj.formatted = '-'
+          return
+        }
+
+        const firstAssign = classDailyAssignments[0]
+        const trackingType = firstAssign?.trackingType
+
+        if (cat === 'Prayer') {
+          // Rule 1: Prayer is 5 daily prayers (35 for 7d, 150 for 30d per prayer assignment)
+          const totalPrayers = 5 * daysCount * classDailyAssignments.length
+          const completedPrayers = catValObj.totalVolume > 0 ? catValObj.totalVolume : catValObj.rawCompleted
+          catValObj.formatted = `${completedPrayers} of ${totalPrayers}`
+          trueCompletedTasks += completedPrayers
+        } else if (trackingType === 'percentage') {
+          // Rule 3: Spiritual Detox / Munkarat -> Average percentage
+          const pctStats = studentCatPctSumMap[s.studentId]?.[cat]
+          const avgPct = pctStats && pctStats.count > 0 ? Math.round(pctStats.sum / pctStats.count) : 0
+          catValObj.formatted = `${avgPct}% Avg`
+          trueCompletedTasks += completedDays
+        } else if (cat === 'Zikr') {
+          // Rule 2: Zikr -> Total Volume + (Days Met of Total Days)
+          if (catValObj.totalVolume > 0) {
+            catValObj.formatted = `${catValObj.totalVolume.toLocaleString()} Times (${completedDays} of ${daysCount} days)`
+          } else if (completedDays > 0) {
+            catValObj.formatted = `${completedDays} of ${daysCount} days`
+          } else {
+            catValObj.formatted = `0 Times (0 of ${daysCount} days)`
+          }
+          trueCompletedTasks += completedDays
+        } else {
+          // General / Reading / Sport
+          const unit = firstAssign?.trackingType === 'counter' ? 'Units' : ''
+          if (catValObj.totalVolume > 0) {
+            catValObj.formatted = `${catValObj.totalVolume} ${unit}`.trim() + ` (${completedDays} of ${daysCount} days)`
+          } else if (completedDays > 0) {
+            catValObj.formatted = `${completedDays} of ${daysCount} days`
+          } else {
+            catValObj.formatted = `0 of ${daysCount} days`
+          }
+          trueCompletedTasks += completedDays
+        }
+      })
+
+      s.completedCount = trueCompletedTasks
+      s.adherenceRate = s.totalExpected > 0 ? Math.min(100, Math.round((s.completedCount / s.totalExpected) * 100)) : 0
     })
 
     return Object.values(studentMap).sort((a, b) => b.completedCount - a.completedCount)
-  }, [filteredStudents, relevantProgress])
+  }, [filteredStudents, relevantProgress, assignments, daysCount, activeCategories])
+
+  // Helper to export the Roster Table as a standard CSV file (.csv) that opens directly in Excel
+  const handleExportExcel = () => {
+    if (studentLeaderboard.length === 0) return
+
+    const headers = ['Student Name', 'Classroom', ...activeCategories, 'Total Tasks Completed', 'Adherence Rate (%)']
+    const rows = studentLeaderboard.map(s => [
+      `"${s.fullName.replace(/"/g, '""')}"`,
+      `"${s.className.replace(/"/g, '""')}"`,
+      ...activeCategories.map(cat => `"${(s.categoryValues[cat]?.formatted || '-').replace(/"/g, '""')}"`),
+      s.completedCount,
+      `"${s.adherenceRate}%"`
+    ])
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    link.setAttribute('download', `Student_Roster_Analytics_${timeframe === '7d' ? '7Days' : '30Days'}_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 font-sans pb-12">
@@ -348,118 +518,77 @@ export default function AnalyticsClient({
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-xl font-bold text-[#092B2B] dark:text-white">Daily Completion Trend</h2>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">
-              Daily percentage of completed spiritual habits by enrolled students ({timeframe === '7d' ? 'Last 7 Days' : 'Last 30 Days'})
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4 text-xs font-bold text-gray-500">
-            <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-sm bg-emerald-600 inline-block"></span>
-              <span>Completion %</span>
-            </div>
+            <p className="text-xs text-gray-500 font-medium mt-0.5">Habit completions breakdown over time ({timeframe === '7d' ? 'Last 7 Days' : 'Last 30 Days'})</p>
           </div>
         </div>
 
-        {/* BAR CHART GRAPH */}
-        <div className="pt-4">
-          <div className="h-56 flex items-end justify-between gap-2 md:gap-4 border-b border-black/10 dark:border-white/10 pb-2 overflow-x-auto">
-            {dailyTrendData.map((d, i) => (
-              <div key={d.dateStr} className="flex-1 flex flex-col items-center min-w-[28px] max-w-[56px] h-full justify-end group relative">
-                
-                {/* Hover Tooltip */}
-                <div className="absolute -top-12 opacity-0 group-hover:opacity-100 transition-opacity bg-[#092B2B] text-white text-[10px] font-bold px-2 py-1 rounded-lg pointer-events-none z-10 whitespace-nowrap shadow-lg">
-                  <p>{d.fullLabel}</p>
-                  <p className="text-emerald-300">{d.completedCount} completed ({d.rate}%)</p>
-                </div>
-
-                {/* Bar Label Score */}
-                <span className="text-[10px] font-extrabold text-gray-500 mb-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {d.rate}%
-                </span>
-
-                {/* Bar Column */}
-                <div className="w-full bg-black/5 dark:bg-white/5 rounded-t-lg flex items-end overflow-hidden h-full">
-                  <div 
-                    className="w-full bg-gradient-to-t from-emerald-700 to-emerald-500 rounded-t-lg transition-all duration-500 group-hover:brightness-110"
-                    style={{ height: `${Math.max(d.rate, 4)}%` }}
-                  ></div>
-                </div>
-
-                {/* Date Label */}
-                <span className="text-[10px] font-extrabold text-gray-400 mt-2 truncate w-full text-center">
-                  {timeframe === '7d' ? d.label : d.label.split(' ')[1]}
-                </span>
+        {/* Bar chart visualization */}
+        <div className="h-44 flex items-end justify-between gap-2 pt-6 border-b border-black/5 dark:border-white/5 pb-2">
+          {dailyTrendData.map((item, idx) => (
+            <div key={idx} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
+              <span className="text-[10px] font-extrabold opacity-0 group-hover:opacity-100 transition-opacity text-emerald-600 dark:text-emerald-400">
+                {item.rate}%
+              </span>
+              <div className="w-full bg-black/5 dark:bg-white/5 rounded-t-lg h-32 flex items-end overflow-hidden p-0.5">
+                <div 
+                  className={`w-full rounded-t-md transition-all duration-500 ${
+                    item.rate >= 80 ? 'bg-emerald-500' : item.rate >= 50 ? 'bg-emerald-700' : 'bg-amber-500'
+                  }`}
+                  style={{ height: `${Math.max(item.rate, 4)}%` }}
+                ></div>
               </div>
-            ))}
-          </div>
+              <span className="text-[10px] font-bold text-gray-400 truncate w-full text-center" title={item.fullLabel}>
+                {item.label}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* GRID: CATEGORY BREAKDOWN & CLASS PERFORMANCE */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* Category Performance Breakdown */}
-        <div className="bg-white dark:bg-black/40 p-6 md:p-8 rounded-3xl border border-black/5 dark:border-white/5 shadow-sm space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-[#092B2B] dark:text-white">Habits by Category</h2>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">Distribution of completed tasks across spiritual habit categories</p>
-          </div>
-
-          {categoryBreakdown.length === 0 ? (
-            <p className="text-xs opacity-60 text-center py-8">No category data available for selection.</p>
-          ) : (
-            <div className="space-y-5">
-              {categoryBreakdown.map(cat => (
-                <div key={cat.name} className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs font-bold">
-                    <span className="text-[#092B2B] dark:text-white">{cat.name}</span>
-                    <span className="text-gray-500">{cat.completed} completed ({cat.percent}% share)</span>
-                  </div>
-                  <div className="w-full bg-black/5 dark:bg-white/5 h-2.5 rounded-full overflow-hidden">
-                    <div 
-                      className="bg-emerald-600 h-full rounded-full transition-all duration-500" 
-                      style={{ width: `${Math.min(cat.percent * 2, 100)}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Class Performance Comparison Matrix */}
-        <div className="bg-white dark:bg-black/40 p-6 md:p-8 rounded-3xl border border-black/5 dark:border-white/5 shadow-sm space-y-6">
-          <div>
-            <h2 className="text-xl font-bold text-[#092B2B] dark:text-white">Classrooms Summary</h2>
-            <p className="text-xs text-gray-500 font-medium mt-0.5">Comparative overview of all active classrooms</p>
-          </div>
-
-          <div className="divide-y divide-black/5 dark:divide-white/5">
-            {classPerformanceList.map(c => (
-              <div key={c.id} className="py-4 flex items-center justify-between gap-4">
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-bold text-sm text-[#092B2B] dark:text-white truncate">{c.name}</h3>
-                  <p className="text-xs text-gray-400 font-medium mt-0.5">
-                    {c.studentCount} Students • {c.habitCount} Habits
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">{c.rate}%</span>
-                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{c.completed} Completed</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-      </div>
-
-      {/* STUDENT LEADERBOARD & PROGRESS ROSTER */}
+      {/* CATEGORY BREAKDOWN SECTION */}
       <div className="bg-white dark:bg-black/40 p-6 md:p-8 rounded-3xl border border-black/5 dark:border-white/5 shadow-sm space-y-6">
         <div>
-          <h2 className="text-xl font-bold text-[#092B2B] dark:text-white">Enrolled Students Roster</h2>
-          <p className="text-xs text-gray-500 font-medium mt-0.5">Student activity logs and completion scores for the selected timeframe</p>
+          <h2 className="text-xl font-bold text-[#092B2B] dark:text-white">Habit Categories Score</h2>
+          <p className="text-xs text-gray-500 font-medium mt-0.5">Distribution of completed daily tasks by category</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {categoryBreakdown.map((cat, idx) => (
+            <div key={idx} className="p-5 rounded-2xl bg-[#f8faf9] dark:bg-black/20 border border-black/5 dark:border-white/5 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">{cat.name}</span>
+                <span className="text-sm font-black text-[#092B2B] dark:text-white">{cat.completed} done</span>
+              </div>
+              <div className="w-full bg-black/5 dark:bg-white/5 h-2 rounded-full overflow-hidden">
+                <div 
+                  className="bg-emerald-600 h-full rounded-full transition-all duration-500"
+                  style={{ width: `${cat.percent}%` }}
+                ></div>
+              </div>
+              <p className="text-[11px] text-gray-400 font-medium">{cat.percent}% of overall completed tasks</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* DYNAMIC ENROLLED STUDENTS ROSTER & EXCEL EXPORTER */}
+      <div className="bg-white dark:bg-black/40 p-6 md:p-8 rounded-3xl border border-black/5 dark:border-white/5 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 className="text-xl font-bold text-[#092B2B] dark:text-white">Enrolled Students Roster</h2>
+            <p className="text-xs text-gray-500 font-medium mt-0.5">Student activity breakdown and completion scores for the selected timeframe ({timeframe === '7d' ? 'Last 7 Days' : 'Last 30 Days'})</p>
+          </div>
+
+          {/* Export to Excel Button */}
+          <button
+            onClick={handleExportExcel}
+            disabled={studentLeaderboard.length === 0}
+            className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-2 shadow-sm hover:shadow active:scale-95 shrink-0"
+            title="Download clean Excel / CSV file"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+            <span>Export Excel (.csv)</span>
+          </button>
         </div>
 
         {studentLeaderboard.length === 0 ? (
@@ -468,18 +597,27 @@ export default function AnalyticsClient({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[800px]">
               <thead>
                 <tr className="border-b border-black/5 dark:border-white/5 text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">
                   <th className="pb-3 pl-2">Student</th>
                   <th className="pb-3">Classroom</th>
+                  {activeCategories.map(cat => (
+                    <th key={cat} className="pb-3 text-center">{cat}</th>
+                  ))}
                   <th className="pb-3 text-center">Completed Tasks</th>
-                  <th className="pb-3 text-right pr-2">Status</th>
+                  <th className="pb-3 text-center">Adherence</th>
+                  <th className="pb-3 text-right pr-2">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5 dark:divide-white/5 text-xs font-medium">
-                {studentLeaderboard.map((student) => (
-                  <tr key={student.studentId} className="hover:bg-black/[0.01] dark:hover:bg-white/[0.01] transition-colors">
+                {studentLeaderboard.map((student, idx) => (
+                  <tr
+                    key={student.studentId}
+                    className={`transition-colors ${
+                      idx % 2 === 1 ? 'bg-emerald-50/50 dark:bg-white/[0.04]' : 'bg-transparent'
+                    } hover:bg-emerald-100/60 dark:hover:bg-white/[0.06]`}
+                  >
                     <td className="py-4 pl-2">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 font-bold flex items-center justify-center text-xs shrink-0">
@@ -496,17 +634,33 @@ export default function AnalyticsClient({
                         {student.className}
                       </span>
                     </td>
+                    {activeCategories.map(cat => (
+                      <td key={cat} className="py-4 text-center font-bold text-gray-800 dark:text-gray-200">
+                        {student.categoryValues[cat]?.formatted || '-'}
+                      </td>
+                    ))}
                     <td className="py-4 text-center font-bold text-sm text-[#092B2B] dark:text-white">
                       {student.completedCount}
                     </td>
-                    <td className="py-4 text-right pr-2">
+                    <td className="py-4 text-center">
                       <span className={`inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider ${
-                        student.completedCount > 0 
-                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300' 
-                          : 'bg-gray-100 text-gray-500 dark:bg-white/5 dark:text-gray-400'
+                        student.adherenceRate >= 80
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                          : student.adherenceRate >= 50
+                          ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
+                          : 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
                       }`}>
-                        {student.completedCount > 0 ? 'Active' : 'No logs'}
+                        {student.adherenceRate}%
                       </span>
+                    </td>
+                    <td className="py-4 text-right pr-2">
+                      <Link
+                        href={`/teacher/class/${student.classId}/student/${student.studentId}`}
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800/40 px-2.5 py-1 rounded-lg transition-all shadow-sm active:scale-95"
+                      >
+                        <span>Report</span>
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </Link>
                     </td>
                   </tr>
                 ))}

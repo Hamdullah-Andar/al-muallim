@@ -376,11 +376,13 @@ export async function getStudentActivityReport(
     totalTarget: number
     totalValueSum: number
     unit: string
+    averagePercentage?: number
   }>()
 
   classAssignments.forEach(a => {
     const cat = a.category || 'General'
     const unit = a.content?.unit || a.unit || (cat === 'Zikr' ? 'Times' : cat === 'Sport' ? 'Minutes' : '')
+    const targetPerAssignment = cat === 'Prayer' ? 5 * dates.length : dates.length
     
     if (!categoryMap.has(cat)) {
       categoryMap.set(cat, {
@@ -393,7 +395,7 @@ export async function getStudentActivityReport(
     }
 
     const catData = categoryMap.get(cat)!
-    catData.totalTarget += dates.length
+    catData.totalTarget += targetPerAssignment
 
     dates.forEach(date => {
       const rec = progressMap.get(`${a.id}_${date}`)
@@ -406,10 +408,16 @@ export async function getStudentActivityReport(
     })
   })
 
-  const categoryBreakdown = Array.from(categoryMap.values()).map(c => ({
-    ...c,
-    percentage: c.totalTarget > 0 ? Math.round((c.completedCount / c.totalTarget) * 100) : 0
-  }))
+  const categoryBreakdown = Array.from(categoryMap.values()).map(c => {
+    let percentage = c.totalTarget > 0 ? Math.round((c.completedCount / c.totalTarget) * 100) : 0
+    if (c.category === 'Prayer') {
+      percentage = c.totalTarget > 0 ? Math.round((c.totalValueSum / c.totalTarget) * 100) : 0
+    }
+    return {
+      ...c,
+      percentage
+    }
+  })
 
   // 3. Habit-by-Habit Breakdown & Best/Worst Habits
   const habitBreakdown = classAssignments.map(a => {
@@ -421,9 +429,12 @@ export async function getStudentActivityReport(
       if (rec?.completed_value) valueSum += Number(rec.completed_value) || 0
     })
 
-    const targetVal = a.content?.target ?? a.target_count ?? 0
-    const unit = a.content?.unit || a.unit || ''
-    const percentage = dates.length > 0 ? Math.round((completedCount / dates.length) * 100) : 0
+    const isPrayer = a.category === 'Prayer'
+    const isPct = a.tracking_type === 'percentage'
+    const targetVal = isPrayer ? 5 : (a.content?.target ?? a.target_count ?? 0)
+    const unit = isPrayer ? 'Prayers' : (a.content?.unit || a.unit || '')
+    const totalDays = isPrayer ? (5 * dates.length) : dates.length
+    const percentage = totalDays > 0 ? Math.round((completedCount / totalDays) * 100) : 0
 
     return {
       id: a.id,
@@ -433,7 +444,7 @@ export async function getStudentActivityReport(
       targetVal,
       unit,
       completedDays: completedCount,
-      totalDays: dates.length,
+      totalDays,
       percentage,
       totalValueSum: valueSum
     }
