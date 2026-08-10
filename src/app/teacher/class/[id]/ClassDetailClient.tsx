@@ -6,6 +6,8 @@ import CreateAssignmentButton from '@/components/CreateAssignmentButton'
 import { uploadClassBook, deleteClassBook, toggleClassActiveStatus, deleteAssignment, updateClassSchedule, removeStudent, restoreStudent } from './actions'
 import { createClient } from '@/utils/supabase/client'
 
+import AttendanceTab from './AttendanceTab'
+
 interface ClassDetailClientProps {
   classData: any
   students: any[]
@@ -14,7 +16,7 @@ interface ClassDetailClientProps {
 }
 
 export default function ClassDetailClient({ classData, students = [], assignments = [], books = [] }: ClassDetailClientProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'students' | 'assignments' | 'books' | 'discussions'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'students' | 'assignments' | 'books' | 'discussions'>('overview')
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
   const [isSubmittingBook, setIsSubmittingBook] = useState(false)
   const [isArchiving, setIsArchiving] = useState(false)
@@ -260,6 +262,17 @@ export default function ClassDetailClient({ classData, students = [], assignment
           Overview
         </button>
         <button
+          onClick={() => setActiveTab('attendance')}
+          className={`pb-4 font-bold transition-all whitespace-nowrap flex items-center gap-2 ${
+            activeTab === 'attendance'
+              ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 dark:border-primary-400'
+              : 'opacity-60 hover:opacity-100'
+          }`}
+        >
+          <span>Attendance</span>
+          <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 text-[10px] font-black px-2 py-0.5 rounded-full">NEW</span>
+        </button>
+        <button
           onClick={() => setActiveTab('students')}
           className={`pb-4 font-bold transition-all whitespace-nowrap ${
             activeTab === 'students'
@@ -288,7 +301,6 @@ export default function ClassDetailClient({ classData, students = [], assignment
           }`}
         >
           <span>Class Library ({books.length})</span>
-          <span className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 text-[10px] font-black px-2 py-0.5 rounded-full">NEW</span>
         </button>
         <button
           onClick={() => setActiveTab('discussions')}
@@ -301,6 +313,11 @@ export default function ClassDetailClient({ classData, students = [], assignment
           Discussions
         </button>
       </div>
+
+      {/* TAB: ATTENDANCE */}
+      {activeTab === 'attendance' && (
+        <AttendanceTab classId={classData.id} students={students} />
+      )}
 
       {/* TAB 1: OVERVIEW */}
       {activeTab === 'overview' && (

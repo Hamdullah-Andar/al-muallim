@@ -109,10 +109,26 @@ export default function StudentReportClient({
         </div>
 
         {/* OVERVIEW KPI CARDS */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Card 1: Overall Completion */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {/* Card 1: Attendance Rate */}
+          <div className="bg-blue-50/70 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/30 rounded-2xl p-5 flex flex-col justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-blue-800 dark:text-blue-400">Class Attendance</span>
+            <div className="my-2">
+              <span className="text-4xl font-black text-blue-900 dark:text-blue-200">
+                {report.attendanceStats?.attendanceRate ?? 0}%
+              </span>
+            </div>
+            <div className="w-full bg-blue-200 dark:bg-blue-900/50 h-2 rounded-full overflow-hidden">
+              <div className="bg-blue-600 h-full rounded-full transition-all duration-700" style={{ width: `${report.attendanceStats?.attendanceRate ?? 0}%` }}></div>
+            </div>
+            <span className="text-[11px] opacity-70 font-medium mt-1.5">
+              {report.attendanceStats?.presentCount ?? 0} of {report.daysCount} days present
+            </span>
+          </div>
+
+          {/* Card 2: Overall Completion */}
           <div className="bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-2xl p-5 flex flex-col justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">Adherence Rate</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">Habit Adherence</span>
             <div className="my-2">
               <span className="text-4xl font-black text-emerald-900 dark:text-emerald-200">{report.overallPercentage}%</span>
             </div>
@@ -122,7 +138,7 @@ export default function StudentReportClient({
             <span className="text-[11px] opacity-70 font-medium mt-1.5">{report.completedHabitEntries} / {report.totalPossibleHabitEntries} tasks done</span>
           </div>
 
-          {/* Card 2: Active Days */}
+          {/* Card 3: Active Days */}
           <div className="bg-gray-50 dark:bg-gray-800/40 border border-black/5 dark:border-white/5 rounded-2xl p-5 flex flex-col justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Active Days</span>
             <div className="my-2">
@@ -131,7 +147,7 @@ export default function StudentReportClient({
             <span className="text-[11px] opacity-70 font-medium">Days with completed habits</span>
           </div>
 
-          {/* Card 3: Streak */}
+          {/* Card 4: Streak */}
           <div className="bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/30 rounded-2xl p-5 flex flex-col justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 dark:text-amber-400">Consistency Streak</span>
             <div className="my-2 flex items-center gap-2">
@@ -141,7 +157,7 @@ export default function StudentReportClient({
             <span className="text-[11px] opacity-70 font-medium">Unbroken daily activity</span>
           </div>
 
-          {/* Card 4: Focus Highlight */}
+          {/* Card 5: Focus Highlight */}
           <div className="bg-gray-50 dark:bg-gray-800/40 border border-black/5 dark:border-white/5 rounded-2xl p-5 flex flex-col justify-between">
             <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Top Habit</span>
             <div className="my-1">

@@ -84,6 +84,26 @@ export default async function TeacherAnalyticsPage() {
     progressRecords = fetchedProgress || []
   }
 
+  // 4. Fetch attendance records for the last 30 days
+  let attendanceRecords: any[] = []
+  if (activeClassIds.length > 0) {
+    const d30 = new Date()
+    d30.setDate(d30.getDate() - 30)
+    const startDateStr = d30.toISOString().split('T')[0]
+
+    try {
+      const { data: fetchedAtt } = await supabase
+        .from('class_attendance')
+        .select('class_id, student_id, attendance_date, status')
+        .in('class_id', activeClassIds)
+        .gte('attendance_date', startDateStr)
+
+      attendanceRecords = fetchedAtt || []
+    } catch (err) {
+      console.warn("Could not fetch class_attendance:", err)
+    }
+  }
+
   // Map enrolled students to clean array
   const formattedStudents = enrollments.map((e: any) => {
     const classObj = activeClasses.find(c => c.id === e.class_id)
@@ -115,6 +135,7 @@ export default async function TeacherAnalyticsPage() {
       students={formattedStudents}
       assignments={formattedAssignments}
       progressRecords={progressRecords}
+      attendanceRecords={attendanceRecords}
     />
   )
 }

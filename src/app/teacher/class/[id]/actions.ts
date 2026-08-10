@@ -459,6 +459,26 @@ export async function getStudentActivityReport(
     ? Math.round((completedHabitEntries / totalPossibleHabitEntries) * 100)
     : 0
 
+  // Fetch attendance records for this student in range
+  let attendanceRecords: any[] = []
+  if (dates.length > 0) {
+    const { data: attData } = await supabase
+      .from('class_attendance')
+      .select('*')
+      .eq('class_id', classId)
+      .eq('student_id', studentId)
+      .in('attendance_date', dates)
+
+    attendanceRecords = attData || []
+  }
+
+  const presentCount = attendanceRecords.filter(a => a.status === 'present').length
+  const lateCount = attendanceRecords.filter(a => a.status === 'late').length
+  const absentCount = attendanceRecords.filter(a => a.status === 'absent').length
+  const excusedCount = attendanceRecords.filter(a => a.status === 'excused').length
+  const totalMarkedDays = attendanceRecords.length
+  const attendanceRate = daysCount > 0 ? Math.round(((presentCount + (lateCount * 0.5)) / daysCount) * 100) : 0
+
   return {
     studentName: studentProfile?.full_name || 'Student',
     studentEmail: studentProfile?.email || '',
@@ -476,6 +496,95 @@ export async function getStudentActivityReport(
     habitBreakdown,
     dailyTrend,
     topHabit,
-    lowestHabit
+    lowestHabit,
+    attendanceStats: {
+      presentCount,
+      lateCount,
+      absentCount,
+      excusedCount,
+      totalMarkedDays,
+      attendanceRate
+    }
   }
+}
+
+// ----------------------------------------------------------------------
+// ATTENDANCE SERVER ACTIONS
+// ----------------------------------------------------------------------
+
+export async function saveClassAttendance(
+  classId: string,
+  attendanceDate: string,
+  records: { studentId: string; status: string; notes?: string }[]
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authorized")
+
+  // Verify class teacher
+  const { data: classData } = await supabase
+    .from('classes')
+    .select('id')
+    .eq('id', classId)
+    .eq('teacher_id', user.id)
+    .single()
+  if (!classData) throw new Error("Not authorized or class not found")
+
+  if (!records || records.length === 0) return { success: true, count: 0 }
+
+  const rowsToUpsert = records.map(r => ({
+    class_id: classId,
+    student_id: r.studentId,
+    attendance_date: attendanceDate,
+    status: r.status,
+    notes: r.notes || null,
+    marked_by: user.id,
+    updated_at: new Date().toISOString()
+  }))
+
+  const { error } = await supabase
+    .from('class_attendance')
+    .upsert(rowsToUpsert, { onConflict: 'class_id, student_id, attendance_date' })
+
+  if (error) {
+    console.error("Failed to save class attendance:", error)
+    throw new Error(error.message || "Failed to save attendance")
+  }
+
+  revalidatePath(`/teacher/class/${classId}`)
+  revalidatePath('/teacher/analytics')
+  return { success: true, count: rowsToUpsert.length }
+}
+
+export async function getClassAttendanceForDate(classId: string, attendanceDate: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authorized")
+
+  const { data } = await supabase
+    .from('class_attendance')
+    .select('*')
+    .eq('class_id', classId)
+    .eq('attendance_date', attendanceDate)
+
+  return data || []
+}
+
+export async function getClassAttendanceHistory(classId: string, daysCount: number = 30) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error("Not authorized")
+
+  const startDate = new Date()
+  startDate.setDate(startDate.getDate() - daysCount)
+  const startDateStr = startDate.toISOString().split('T')[0]
+
+  const { data } = await supabase
+    .from('class_attendance')
+    .select('*')
+    .eq('class_id', classId)
+    .gte('attendance_date', startDateStr)
+    .order('attendance_date', { ascending: false })
+
+  return data || []
 }

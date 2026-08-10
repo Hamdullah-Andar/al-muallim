@@ -7,19 +7,22 @@ type ClassItem = { id: string; name: string; code: string }
 type StudentItem = { studentId: string; fullName: string; email: string; classId: string; className: string; joinedAt: string }
 type AssignmentItem = { id: string; classId: string; className: string; category: string; title: string; trackingType: string; isDaily: boolean }
 type ProgressItem = { assignment_id: string; student_id: string; tracking_date: string; completed_value?: number; is_completed: boolean; updated_at: string }
+type AttendanceItem = { class_id: string; student_id: string; attendance_date: string; status: string }
 
 export default function AnalyticsClient({
   teacherName,
   classes,
   students,
   assignments,
-  progressRecords
+  progressRecords,
+  attendanceRecords = []
 }: {
   teacherName: string
   classes: ClassItem[]
   students: StudentItem[]
   assignments: AssignmentItem[]
   progressRecords: ProgressItem[]
+  attendanceRecords?: AttendanceItem[]
 }) {
   const [selectedClassId, setSelectedClassId] = useState<string>('all')
   const [timeframe, setTimeframe] = useState<'7d' | '30d'>('7d')
@@ -93,6 +96,14 @@ export default function AnalyticsClient({
     })
   }, [progressRecords, assignmentIdSet, dateSet])
 
+  // Filter attendance records within selected date range (strictly aligned with completed date window)
+  const relevantAttendance = useMemo(() => {
+    return attendanceRecords.filter(a => {
+      const aDate = a.attendance_date ? String(a.attendance_date).split('T')[0] : ''
+      return dateSet.has(aDate)
+    })
+  }, [attendanceRecords, dateSet])
+
   // 1. Calculate overall metrics
   const uniqueStudentsCount = useMemo(() => {
     const ids = new Set(filteredStudents.map(s => s.studentId))
@@ -108,7 +119,6 @@ export default function AnalyticsClient({
       classDailyAssignments.forEach(a => {
         const cat = a.category || 'General'
         if (cat === 'Prayer') {
-          // Prayer is 5 prayers daily per student
           expected += classStudentsCount * 5 * daysCount
         } else {
           expected += classStudentsCount * daysCount
@@ -239,7 +249,7 @@ export default function AnalyticsClient({
     })
   }, [filteredAssignments, relevantProgress, assignments, totalCompletedInPeriod])
 
-  // 5. Enhanced Student Roster & Leaderboard with Dynamic Categories & Domain Rules
+  // 5. Enhanced Student Roster & Leaderboard with Dynamic Categories, Domain Rules, and Class Attendance
   const studentLeaderboard = useMemo(() => {
     const studentMap: Record<string, {
       studentId: string
@@ -250,6 +260,8 @@ export default function AnalyticsClient({
       completedCount: number
       totalExpected: number
       adherenceRate: number
+      attendanceRate: number
+      attendanceText: string
       categoryValues: Record<string, {
         formatted: string
         rawCompleted: number
@@ -285,6 +297,8 @@ export default function AnalyticsClient({
         completedCount: 0,
         totalExpected: expectedTasks,
         adherenceRate: 0,
+        attendanceRate: 0,
+        attendanceText: 'N/A',
         categoryValues
       }
     })
@@ -325,6 +339,19 @@ export default function AnalyticsClient({
       }
     })
 
+    // Map attendance per student
+    const studentAttMap: Record<string, { present: number; late: number; absent: number; total: number }> = {}
+    relevantAttendance.forEach(a => {
+      if (!studentAttMap[a.student_id]) {
+        studentAttMap[a.student_id] = { present: 0, late: 0, absent: 0, total: 0 }
+      }
+      const att = studentAttMap[a.student_id]
+      att.total += 1
+      if (a.status === 'present') att.present += 1
+      else if (a.status === 'late') att.late += 1
+      else if (a.status === 'absent') att.absent += 1
+    })
+
     // Format output strings per domain rules and sum true completed tasks
     Object.values(studentMap).forEach(s => {
       let trueCompletedTasks = 0
@@ -344,19 +371,16 @@ export default function AnalyticsClient({
         const trackingType = firstAssign?.trackingType
 
         if (cat === 'Prayer') {
-          // Rule 1: Prayer is 5 daily prayers (35 for 7d, 150 for 30d per prayer assignment)
           const totalPrayers = 5 * daysCount * classDailyAssignments.length
           const completedPrayers = catValObj.totalVolume > 0 ? catValObj.totalVolume : catValObj.rawCompleted
           catValObj.formatted = `${completedPrayers} of ${totalPrayers}`
           trueCompletedTasks += completedPrayers
         } else if (trackingType === 'percentage') {
-          // Rule 3: Spiritual Detox / Munkarat -> Average percentage
           const pctStats = studentCatPctSumMap[s.studentId]?.[cat]
           const avgPct = pctStats && pctStats.count > 0 ? Math.round(pctStats.sum / pctStats.count) : 0
           catValObj.formatted = `${avgPct}% Avg`
           trueCompletedTasks += completedDays
         } else if (cat === 'Zikr') {
-          // Rule 2: Zikr -> Total Volume + (Days Met of Total Days)
           if (catValObj.totalVolume > 0) {
             catValObj.formatted = `${catValObj.totalVolume.toLocaleString()} Times (${completedDays} of ${daysCount} days)`
           } else if (completedDays > 0) {
@@ -366,7 +390,6 @@ export default function AnalyticsClient({
           }
           trueCompletedTasks += completedDays
         } else {
-          // General / Reading / Sport
           const unit = firstAssign?.trackingType === 'counter' ? 'Units' : ''
           if (catValObj.totalVolume > 0) {
             catValObj.formatted = `${catValObj.totalVolume} ${unit}`.trim() + ` (${completedDays} of ${daysCount} days)`
@@ -381,19 +404,31 @@ export default function AnalyticsClient({
 
       s.completedCount = trueCompletedTasks
       s.adherenceRate = s.totalExpected > 0 ? Math.min(100, Math.round((s.completedCount / s.totalExpected) * 100)) : 0
+
+      // Compute student attendance rate based on timeframe daysCount (7 or 30 days)
+      const attStats = studentAttMap[s.studentId]
+      if (attStats && attStats.total > 0) {
+        const effectivePresent = attStats.present + (attStats.late * 0.5)
+        s.attendanceRate = Math.round((effectivePresent / daysCount) * 100)
+        s.attendanceText = `${s.attendanceRate}% (${attStats.present} of ${daysCount} days)`
+      } else {
+        s.attendanceRate = 0
+        s.attendanceText = '-'
+      }
     })
 
     return Object.values(studentMap).sort((a, b) => b.completedCount - a.completedCount)
-  }, [filteredStudents, relevantProgress, assignments, daysCount, activeCategories])
+  }, [filteredStudents, relevantProgress, relevantAttendance, assignments, daysCount, activeCategories])
 
   // Helper to export the Roster Table as a standard CSV file (.csv) that opens directly in Excel
   const handleExportExcel = () => {
     if (studentLeaderboard.length === 0) return
 
-    const headers = ['Student Name', 'Classroom', ...activeCategories, 'Total Tasks Completed', 'Adherence Rate (%)']
+    const headers = ['Student Name', 'Classroom', 'Attendance (%)', ...activeCategories, 'Total Tasks Completed', 'Adherence Rate (%)']
     const rows = studentLeaderboard.map(s => [
       `"${s.fullName.replace(/"/g, '""')}"`,
       `"${s.className.replace(/"/g, '""')}"`,
+      `"${s.attendanceText.replace(/"/g, '""')}"`,
       ...activeCategories.map(cat => `"${(s.categoryValues[cat]?.formatted || '-').replace(/"/g, '""')}"`),
       s.completedCount,
       `"${s.adherenceRate}%"`
@@ -602,6 +637,7 @@ export default function AnalyticsClient({
                 <tr className="border-b border-black/5 dark:border-white/5 text-[10px] font-extrabold uppercase text-gray-400 tracking-wider">
                   <th className="pb-3 pl-2">Student</th>
                   <th className="pb-3">Classroom</th>
+                  <th className="pb-3 text-center">Attendance</th>
                   {activeCategories.map(cat => (
                     <th key={cat} className="pb-3 text-center">{cat}</th>
                   ))}
@@ -633,6 +669,21 @@ export default function AnalyticsClient({
                       <span className="bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 font-bold px-2.5 py-1 rounded-lg text-[11px]">
                         {student.className}
                       </span>
+                    </td>
+                    <td className="py-4 text-center">
+                      {student.attendanceText !== '-' ? (
+                        <span className={`inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                          student.attendanceRate >= 80
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300'
+                            : student.attendanceRate >= 50
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300'
+                            : 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
+                        }`}>
+                          {student.attendanceText}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400 font-bold text-xs">-</span>
+                      )}
                     </td>
                     {activeCategories.map(cat => (
                       <td key={cat} className="py-4 text-center font-bold text-gray-800 dark:text-gray-200">
