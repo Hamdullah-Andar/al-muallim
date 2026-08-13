@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { saveClassAttendance, getClassAttendanceForDate } from './actions'
+import AttendanceRegister from './AttendanceRegister'
 
 interface Student {
   student_id: string
@@ -13,6 +14,8 @@ interface Student {
 
 interface AttendanceTabProps {
   classId: string
+  className: string
+  scheduleDays: string[]
   students: Student[]
 }
 
@@ -23,9 +26,11 @@ interface AttendanceRecordState {
   notes: string
 }
 
-export default function AttendanceTab({ classId, students }: AttendanceTabProps) {
+export default function AttendanceTab({ classId, className, scheduleDays, students }: AttendanceTabProps) {
   // Filter active students only
   const activeStudents = students.filter(s => s.is_active !== false)
+
+  const [showRegister, setShowRegister] = useState(false)
 
   // Default date = Today (YYYY-MM-DD)
   const [selectedDate, setSelectedDate] = useState<string>(() => {
@@ -154,8 +159,24 @@ export default function AttendanceTab({ classId, students }: AttendanceTabProps)
 
   const presentPercent = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0
 
+  // Check if the selected date is a non-scheduled class day
+  const DAY_ABBRS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const selectedDayAbbr = DAY_ABBRS[new Date(selectedDate + 'T00:00:00').getDay()]
+  const isOffScheduleDay = scheduleDays.length > 0 && !scheduleDays.includes(selectedDayAbbr)
+
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
+
+      {/* ATTENDANCE REGISTER MODAL */}
+      {showRegister && (
+        <AttendanceRegister
+          classId={classId}
+          className={className}
+          scheduleDays={scheduleDays}
+          students={students}
+          onClose={() => setShowRegister(false)}
+        />
+      )}
       
       {/* CONTROL & STATS HEADER CARD */}
       <div className="bg-white dark:bg-black/40 p-6 md:p-8 rounded-3xl border border-black/5 dark:border-white/5 shadow-sm space-y-6">
@@ -174,8 +195,16 @@ export default function AttendanceTab({ classId, students }: AttendanceTabProps)
             </p>
           </div>
 
-          {/* Date Picker & Quick Day Controls */}
+          {/* Date Picker, Quick Day Controls & View Register button */}
           <div className="flex flex-wrap items-center gap-3">
+            {/* View Register Button */}
+            <button
+              onClick={() => setShowRegister(true)}
+              className="text-xs font-bold text-[#092B2B] dark:text-white bg-[#f4f7f6] dark:bg-white/5 hover:bg-emerald-50 dark:hover:bg-white/10 border border-black/10 dark:border-white/10 hover:border-emerald-300 dark:hover:border-emerald-700 px-4 py-2.5 rounded-xl transition-all flex items-center gap-2"
+            >
+              <svg className="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <span>View Register</span>
+            </button>
             <div className="flex items-center bg-[#f4f7f6] dark:bg-black/50 border border-black/5 dark:border-white/5 rounded-2xl p-1">
               <button
                 onClick={handlePreviousDay}
@@ -207,6 +236,21 @@ export default function AttendanceTab({ classId, students }: AttendanceTabProps)
             </button>
           </div>
         </div>
+
+        {/* ⚠️ OFF-SCHEDULE DAY WARNING BANNER */}
+        {isOffScheduleDay && (
+          <div className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-300 dark:border-amber-700/50 rounded-2xl px-5 py-4 animate-in fade-in duration-200">
+            <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-amber-800 dark:text-amber-300">
+                {selectedDayAbbr} is not a scheduled class day
+              </p>
+              <p className="text-xs text-amber-700 dark:text-amber-400 font-medium mt-0.5">
+                This class is scheduled on <strong>{scheduleDays.join(', ')}</strong>. Attendance recorded here will be saved but won&apos;t appear in the Register unless you enable &quot;Include off-schedule sessions&quot; in the View Register.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* STATS OVERVIEW CARDS */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">

@@ -316,7 +316,7 @@ export default function ClassDetailClient({ classData, students = [], assignment
 
       {/* TAB: ATTENDANCE */}
       {activeTab === 'attendance' && (
-        <AttendanceTab classId={classData.id} students={students} />
+        <AttendanceTab classId={classData.id} className={classData.name} scheduleDays={scheduleDays} students={students} />
       )}
 
       {/* TAB 1: OVERVIEW */}
