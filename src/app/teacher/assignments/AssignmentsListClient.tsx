@@ -1,4 +1,6 @@
-'use client'
+﻿'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
 
 import { useState } from 'react'
 import CreateAssignmentButton from '@/components/CreateAssignmentButton'
@@ -67,39 +69,38 @@ export default function AssignmentsListClient({
     <div className="space-y-8 animate-in fade-in duration-500 font-sans">
       
       {/* HEADER SECTION */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-black/5 dark:border-white/5 pb-8">
-        <div>
-          <p className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3">Portal <span className="mx-1">/</span> <span className="text-[#092B2B] dark:text-emerald-500">Assignments</span></p>
-          <h1 className="text-4xl font-bold mb-2 font-arabic tracking-tight text-[#092B2B] dark:text-white">Habits & Tasks</h1>
-          <p className="text-sm text-gray-500 font-medium">
-            Manage daily assignments, prayer trackers, recitation goals, and spiritual metrics across your classrooms.
-          </p>
-        </div>
-
-        {/* Action Panel for Creating Assignments */}
-        {activeClasses.length > 0 ? (
-          <div className="bg-white dark:bg-black/30 p-4 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-4 min-w-[320px] lg:min-w-[400px]">
-            <div className="flex-1">
-              <label className="block text-[10px] font-extrabold uppercase text-gray-400 tracking-wider mb-1.5">Target Classroom</label>
-              <select
-                value={selectedClassId}
-                onChange={(e) => setSelectedClassId(e.target.value)}
-                className="w-full bg-[#f4f7f6] dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold focus:outline-none focus:border-emerald-500 transition-colors"
-              >
-                {activeClasses.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-            </div>
-            <div className="sm:pt-5 shrink-0">
-              <CreateAssignmentButton classId={selectedClassId} books={activeClassBooks} />
-            </div>
-          </div>
-        ) : (
-          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 p-4 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300">
-            Create an active class first before creating assignments.
-          </div>
-        )}
+      <div className="border-b border-black/5 dark:border-white/5 pb-6">
+        <PageHeader
+          breadcrumb="PORTAL / ASSIGNMENTS"
+          title="Habits & Tasks"
+          subtitle="Manage daily assignments, prayer trackers, recitation goals, and spiritual metrics across your classrooms."
+          className="mb-0"
+          actions={
+            activeClasses.length > 0 ? (
+              <div className="bg-white dark:bg-black/30 p-3.5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="min-w-[160px]">
+                  <label className="block text-[9px] font-extrabold uppercase text-gray-400 tracking-wider mb-1">Target Classroom</label>
+                  <select
+                    value={selectedClassId}
+                    onChange={(e) => setSelectedClassId(e.target.value)}
+                    className="w-full bg-[#f4f7f6] dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl px-2.5 py-1.5 text-xs font-bold focus:outline-none focus:border-emerald-500 transition-colors"
+                  >
+                    {activeClasses.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="sm:pt-4 shrink-0">
+                  <CreateAssignmentButton classId={selectedClassId} books={activeClassBooks} />
+                </div>
+              </div>
+            ) : (
+              <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/40 p-3 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300">
+                Create an active class first before creating assignments.
+              </div>
+            )
+          }
+        />
       </div>
 
       {/* FILTER & SEARCH ROW */}
@@ -181,7 +182,7 @@ export default function AssignmentsListClient({
                       {a.category}
                     </span>
                     <span className="bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg uppercase tracking-wide">
-                      🏫 {a.classes?.name || 'Classroom'}
+                      ðŸ« {a.classes?.name || 'Classroom'}
                     </span>
                   </div>
                   

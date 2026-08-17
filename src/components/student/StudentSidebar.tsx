@@ -1,9 +1,14 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-export default function StudentSidebar({ hasClasses = false }: { hasClasses?: boolean }) {
+interface StudentSidebarProps {
+  hasClasses?: boolean
+  onLinkClick?: () => void
+}
+
+export default function StudentSidebar({ hasClasses = false, onLinkClick }: StudentSidebarProps) {
   const pathname = usePathname()
 
   const personalLinks = [
@@ -58,7 +63,6 @@ export default function StudentSidebar({ hasClasses = false }: { hasClasses?: bo
   ]
 
   const renderLink = (link: any) => {
-    // Exact match for dashboard to prevent highlighting when in other routes, otherwise startsWith
     const isActive = link.href === '/student/dashboard' 
       ? pathname === link.href 
       : (pathname === link.href || pathname.startsWith(link.href + '/'))
@@ -67,6 +71,7 @@ export default function StudentSidebar({ hasClasses = false }: { hasClasses?: bo
       <Link 
         key={link.name}
         href={link.href} 
+        onClick={onLinkClick}
         className={`flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold transition-colors ${
           isActive 
             ? 'bg-[#bdf3df]/80 text-primary-800' 
@@ -82,7 +87,7 @@ export default function StudentSidebar({ hasClasses = false }: { hasClasses?: bo
   }
 
   return (
-    <aside className="w-[280px] bg-white dark:bg-black border-r border-black/5 dark:border-white/5 hidden lg:flex flex-col shadow-sm z-20">
+    <aside className="w-[280px] bg-white dark:bg-black border-r border-black/5 dark:border-white/5 flex flex-col h-full shadow-sm">
       <div className="p-8 flex flex-col items-center border-b border-black/5 dark:border-white/5">
         <div className="w-16 h-16 bg-[#bdf3df]/40 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
            <div className="w-8 h-8 bg-[#bdf3df] rounded-full flex items-center justify-center shadow-sm">
@@ -130,12 +135,12 @@ export default function StudentSidebar({ hasClasses = false }: { hasClasses?: bo
             </button>
           </div>
         )}
-         <Link href="/student/support" className="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100 font-medium transition-colors text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
+         <Link href="/student/support" onClick={onLinkClick} className="flex items-center gap-4 px-4 py-3.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 opacity-60 hover:opacity-100 font-medium transition-colors text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white">
            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
            Support
         </Link>
         
-        <Link href="/student/join" className="flex items-center justify-center gap-2 w-full bg-[#092B2B] hover:bg-[#0a3838] dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-3.5 rounded-xl font-bold transition-all shadow-sm">
+        <Link href="/student/join" onClick={onLinkClick} className="flex items-center justify-center gap-2 w-full bg-[#092B2B] hover:bg-[#0a3838] dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-4 py-3.5 rounded-xl font-bold transition-all shadow-sm">
            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 4v16m8-8H4" /></svg>
            Join New Class
         </Link>

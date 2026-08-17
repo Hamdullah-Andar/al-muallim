@@ -1,9 +1,13 @@
-'use client'
+﻿'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-export default function TeacherSidebar() {
+interface TeacherSidebarProps {
+  onLinkClick?: () => void
+}
+
+export default function TeacherSidebar({ onLinkClick }: TeacherSidebarProps) {
   const pathname = usePathname()
 
   const links = [
@@ -19,7 +23,6 @@ export default function TeacherSidebar() {
     {
       href: '/teacher/classes',
       label: 'My Classes',
-      // Matches /teacher/classes or /teacher/class/[id]
       isActive: (path: string) => path === '/teacher/classes' || path.startsWith('/teacher/class/'),
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -56,10 +59,11 @@ export default function TeacherSidebar() {
           <Link
             key={link.href}
             href={link.href}
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-semibold transition-colors ${
+            onClick={onLinkClick}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${
               active
-                ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100 font-medium text-foreground'
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 shadow-sm'
+                : 'hover:bg-black/5 dark:hover:bg-white/5 opacity-70 hover:opacity-100 font-medium text-gray-700 dark:text-gray-300'
             }`}
           >
             {link.icon}

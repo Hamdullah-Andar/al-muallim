@@ -1,4 +1,6 @@
-'use client'
+﻿'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -52,76 +54,19 @@ export default function ClassesClient({
   return (
     <div className="max-w-7xl mx-auto p-4 md:p-8 animate-in fade-in duration-500 font-sans w-full min-w-0 overflow-x-hidden">
       
-      {/* Global Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-        <div className="hidden md:block w-32"></div> {/* Spacer for left alignment in some layouts, or keep empty */}
-        
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:flex-1 md:justify-end">
-          {/* Search Bar */}
-          <div className="relative w-full sm:max-w-md md:w-96">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-            </div>
-            <input 
-              type="text" 
-              placeholder="Search for lessons..." 
-              className="w-full bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/5 shadow-sm rounded-full py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-[#0a6c4c] transition-all"
-            />
-          </div>
-
-          <div className="flex items-center gap-6 self-end sm:self-auto ml-auto">
-            {/* Notification and Settings */}
-            <div className="flex items-center gap-4">
-              <button className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors relative">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-gray-900"></span>
-              </button>
-              <button className="text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-              </button>
-            </div>
-            
-            <div className="h-6 w-px bg-gray-200 dark:bg-gray-800"></div>
-            
-            {/* Profile */}
-            <div className="flex items-center gap-3">
-               <div className="text-right hidden sm:block">
-                  <p className="text-sm font-bold leading-tight text-gray-900 dark:text-white">{userName}</p>
-                  <p className="text-[10px] opacity-60 font-bold mt-0.5">Level 4 Student</p>
-               </div>
-               <div className="w-9 h-9 rounded-full bg-[#E8F0F8] border border-gray-200 dark:border-gray-700 flex items-center justify-center text-primary-800 font-bold overflow-hidden shadow-sm">
-                  {userId ? (
-                    <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${userId}`} alt="avatar" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-emerald-500"></div>
-                  )}
-               </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Page Title & Intro Section */}
-      <div className="mb-8">
-        <p className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3">Portal <span className="mx-1">/</span> <span className="text-[#092B2B] dark:text-emerald-500">Joined Classes</span></p>
-        
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div className="max-w-2xl">
-            <h1 className="text-3xl md:text-4xl font-extrabold text-[#092B2B] dark:text-white tracking-tight mb-3">Continue Your Journey</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed">
-              You have {classes.length} active classes. Stay consistent with your daily learning goals and keep progressing toward spiritual growth.
-            </p>
-          </div>
-          
-          <Link href="/student/join" className="shrink-0">
-            <button className="bg-[#092B2B] hover:bg-[#0a3838] dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold shadow-sm shadow-emerald-900/20 transition-all flex items-center gap-2 text-sm">
+      <PageHeader
+        breadcrumb="PORTAL / JOINED CLASSES"
+        title="Continue Your Journey"
+        subtitle={`You have ${classes.length} active classes. Stay consistent with your daily learning goals and keep progressing.`}
+        actions={
+          <Link href="/student/join">
+            <button className="bg-[#092B2B] hover:bg-[#0a3838] dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold shadow-sm transition-all flex items-center gap-2 text-xs">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" /></svg>
               Join New Class
             </button>
           </Link>
-        </div>
-      </div>
-
+        }
+      />
       {/* Filters and Sorting */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         {/* Toggle Pills */}
@@ -192,7 +137,7 @@ export default function ClassesClient({
                   </span>
                   {item.isActive === false && (
                     <span className="bg-amber-500/90 backdrop-blur-sm text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-1.5 rounded-full flex items-center gap-1">
-                      🔒 Archived / Closed
+                      ðŸ”’ Archived / Closed
                     </span>
                   )}
                </div>

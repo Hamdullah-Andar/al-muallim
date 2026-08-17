@@ -1,4 +1,6 @@
-'use client'
+﻿'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
 
 import React, { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
@@ -362,51 +364,32 @@ export default function LibraryClient({
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#fbfbfb] dark:bg-[#0a0a0a]">
-      {/* TOP SEARCH & USER BAR */}
-      <header className="flex items-center justify-between px-8 py-5 bg-white dark:bg-[#111] border-b border-black/5 dark:border-white/5 sticky top-0 z-10">
-        {/* Search Input */}
-        <div className="relative w-full max-w-md">
-          <svg className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value)
-              setCurrentPage(1)
-            }}
-            placeholder="Search resources, books, or authors..."
-            className="w-full bg-[#f4f7f6] dark:bg-white/5 border border-transparent focus:border-primary-500 rounded-2xl py-2.5 pl-11 pr-4 text-xs font-medium text-gray-900 dark:text-white outline-none transition-all"
-          />
-        </div>
 
-        {/* Right Controls */}
-        <div className="flex items-center gap-4">
-          {/* Bell Icon */}
-          <button type="button" className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-          </button>
-
-          {/* Settings Gear */}
-          <button type="button" className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-
-          {/* Profile Avatar */}
-          <div className="w-9 h-9 rounded-full bg-primary-100 dark:bg-primary-900/40 border-2 border-white dark:border-gray-800 flex items-center justify-center font-bold text-primary-700 dark:text-primary-300 text-sm shadow-sm">
-            {profile?.full_name?.charAt(0) || 'S'}
-          </div>
-        </div>
-      </header>
 
       {/* MAIN CONTENT AREA */}
-      <main className="p-8 max-w-[1240px] w-full mx-auto space-y-8">
+      <main className="p-4 md:p-8 max-w-[1240px] w-full mx-auto space-y-8">
+        <PageHeader
+          breadcrumb="STUDENT PORTAL / GLOBAL LIBRARY"
+          title="Digital Library & Resources"
+          subtitle="Explore authentic Islamic texts, Quran recitations, commentary, and class study resources."
+          actions={
+            <div className="relative w-full sm:w-64">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value)
+                  setCurrentPage(1)
+                }}
+                placeholder="Search resources..."
+                className="w-full bg-white dark:bg-[#1a1a1a] border border-black/10 dark:border-white/10 rounded-xl py-2 pl-9 pr-4 text-xs font-medium text-gray-900 dark:text-white outline-none focus:border-emerald-500 transition-all"
+              />
+            </div>
+          }
+        />
         
         {/* HERO FEATURED BANNER */}
         {featuredBook ? (
@@ -451,7 +434,7 @@ export default function LibraryClient({
               <div className="relative w-64 h-40 md:w-72 md:h-44 bg-gradient-to-br from-[#1b3d2f] to-[#0d2219] rounded-2xl p-4 border border-white/15 shadow-2xl rotate-2 transform hover:rotate-0 transition-transform flex items-center gap-4">
                 <div className="w-24 h-32 bg-gradient-to-br from-emerald-800 to-black rounded-lg border border-amber-400/40 shadow-lg flex flex-col items-center justify-center p-2 text-center shrink-0">
                   <div className="w-6 h-6 rounded-full border border-amber-300/60 flex items-center justify-center mb-1">
-                    <span className="text-[8px] font-bold text-amber-300">نور</span>
+                    <span className="text-[8px] font-bold text-amber-300">Ù†ÙˆØ±</span>
                   </div>
                   <p className="text-[9px] font-black text-amber-200 uppercase tracking-tight leading-tight line-clamp-1">{featuredBook.category || 'LIBRARY'}</p>
                   <div className="w-8 h-0.5 bg-amber-400/50 my-1"></div>
@@ -487,7 +470,7 @@ export default function LibraryClient({
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-[#092B2B] dark:text-white">Continue Reading</h3>
             <button type="button" className="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline">
-              View All History →
+              View All History â†’
             </button>
           </div>
 
@@ -662,7 +645,7 @@ export default function LibraryClient({
                       {/* Book Cover Illustration */}
                       <div className={`w-32 h-44 rounded-xl bg-gradient-to-br ${item.coverColor} shadow-xl border border-black/10 dark:border-white/10 flex flex-col items-center justify-center p-3 text-center transform group-hover:scale-105 transition-transform`}>
                         <div className="w-6 h-6 rounded-full border border-black/20 dark:border-white/20 flex items-center justify-center mb-2">
-                          <span className="text-[10px] font-bold opacity-75">📖</span>
+                          <span className="text-[10px] font-bold opacity-75">ðŸ“–</span>
                         </div>
                         <p className="text-xs font-bold text-gray-900 dark:text-white leading-tight line-clamp-3">
                           {item.title}
@@ -691,7 +674,7 @@ export default function LibraryClient({
                           {item.pages} Pages
                         </span>
                         <span className="flex items-center gap-1 font-bold text-gray-800 dark:text-white">
-                          <span className="text-amber-500">★</span> {item.rating.toFixed(1)}
+                          <span className="text-amber-500">â˜…</span> {item.rating.toFixed(1)}
                         </span>
                       </div>
                     </div>
@@ -709,7 +692,7 @@ export default function LibraryClient({
                   >
                     <div className="flex items-center gap-4 min-w-0">
                       <div className={`w-12 h-16 rounded-lg bg-gradient-to-br ${item.coverColor} shadow-md shrink-0 flex items-center justify-center p-1 text-center`}>
-                        <span className="text-[10px] font-bold">📖</span>
+                        <span className="text-[10px] font-bold">ðŸ“–</span>
                       </div>
                       <div className="min-w-0">
                         <span className={`inline-block ${item.badgeColor} text-[8px] font-black px-2 py-0.5 rounded uppercase mb-1`}>
@@ -722,8 +705,8 @@ export default function LibraryClient({
 
                     <div className="flex items-center gap-6 shrink-0 text-xs font-bold">
                       <span className="text-gray-500">{item.pages} Pages</span>
-                      <span className="text-amber-500">★ {item.rating.toFixed(1)}</span>
-                      <span className="text-primary-600 dark:text-primary-400">Read →</span>
+                      <span className="text-amber-500">â˜… {item.rating.toFixed(1)}</span>
+                      <span className="text-primary-600 dark:text-primary-400">Read â†’</span>
                     </div>
                   </div>
                 ))}
@@ -739,7 +722,7 @@ export default function LibraryClient({
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   className="w-9 h-9 rounded-xl bg-white dark:bg-[#111] border border-black/5 dark:border-white/5 flex items-center justify-center text-gray-500 disabled:opacity-30 font-bold"
                 >
-                  ‹
+                  â€¹
                 </button>
                 {Array.from({ length: totalPages }).map((_, idx) => {
                   const p = idx + 1
@@ -764,7 +747,7 @@ export default function LibraryClient({
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   className="w-9 h-9 rounded-xl bg-white dark:bg-[#111] border border-black/5 dark:border-white/5 flex items-center justify-center text-gray-500 disabled:opacity-30 font-bold"
                 >
-                  ›
+                  â€º
                 </button>
               </div>
             )}
@@ -779,7 +762,7 @@ export default function LibraryClient({
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className={`w-16 h-22 rounded-xl bg-gradient-to-br ${selectedBook.coverColor} shadow-md flex items-center justify-center p-2 text-center`}>
-                  <span className="text-xl">📖</span>
+                  <span className="text-xl">ðŸ“–</span>
                 </div>
                 <div>
                   <span className={`inline-block ${selectedBook.badgeColor} text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded mb-1`}>
@@ -794,7 +777,7 @@ export default function LibraryClient({
                 onClick={() => setSelectedBook(null)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1"
               >
-                ✕
+                âœ•
               </button>
             </div>
 
@@ -804,7 +787,7 @@ export default function LibraryClient({
 
             <div className="flex items-center justify-between text-xs font-bold bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
               <span>Pages: {selectedBook.pages}</span>
-              <span>Rating: ★ {selectedBook.rating.toFixed(1)}</span>
+              <span>Rating: â˜… {selectedBook.rating.toFixed(1)}</span>
               <span>Category: {selectedBook.category}</span>
             </div>
 
@@ -844,7 +827,7 @@ export default function LibraryClient({
                 onClick={() => setIsRequestModalOpen(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1"
               >
-                ✕
+                âœ•
               </button>
             </div>
 

@@ -1,4 +1,6 @@
-'use client'
+﻿'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
 
 import { useState } from 'react'
 import Link from 'next/link'
@@ -41,7 +43,7 @@ function getClassVisuals(className: string, index: number) {
 
 function formatClassSchedule(days: string[] | null | undefined, time: string | null | undefined): string {
   if (!days || days.length === 0) return 'Schedule not set'
-  const timeStr = time ? ` · ${formatTime12h(time)}` : ''
+  const timeStr = time ? ` Â· ${formatTime12h(time)}` : ''
   return days.join(', ') + timeStr
 }
 
@@ -94,16 +96,12 @@ export default function ClassesListClient({
     <div className="space-y-8 animate-in fade-in duration-500 font-sans">
       
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div>
-          <p className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-3">Portal <span className="mx-1">/</span> <span className="text-[#092B2B] dark:text-emerald-500">My Classes</span></p>
-          <h1 className="text-4xl font-bold mb-2 font-arabic tracking-tight text-[#092B2B] dark:text-white">Classrooms Directory</h1>
-          <p className="text-sm text-gray-500 font-medium">
-            Manage your courses, view student rosters, and configure daily spiritual goals.
-          </p>
-        </div>
-        <CreateClassModal />
-      </div>
+      <PageHeader
+        breadcrumb="PORTAL / MY CLASSES"
+        title="Classrooms Directory"
+        subtitle="Manage your courses, view student rosters, and configure daily spiritual goals."
+        actions={<CreateClassModal />}
+      />
 
       {/* STATS ROW */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -200,7 +198,7 @@ export default function ClassesListClient({
                     </span>
                     {!c.isActive && (
                       <span className="bg-amber-500 text-white text-[10px] font-extrabold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
-                        🔒 Closed
+                        ðŸ”’ Closed
                       </span>
                     )}
                   </div>

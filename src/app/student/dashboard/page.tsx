@@ -1,3 +1,4 @@
+﻿import PageHeader from '@/components/ui/PageHeader'
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
@@ -137,37 +138,13 @@ export default async function StudentDashboard() {
   return (
     <div className="max-w-7xl mx-auto p-6 md:p-10 animate-in fade-in duration-500 font-sans">
       
-      {/* 1. Header Row (Greeting + Profile) */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
-        <div>
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white tracking-tight mb-2">Assalamu Alaikum, {profile?.full_name?.split(' ')[0] || 'Student'}</h1>
-          <p className="opacity-70 text-sm">Welcome to your Personal Taqwa Space.</p>
-        </div>
-        
-        {/* Right side Profile controls */}
-        <div className="flex items-center gap-4 sm:gap-6">
-          <CreateHabitButton books={libraryBooks || []} />
-          
-          <button className="text-gray-400 hover:text-gray-900 transition-colors hidden sm:block">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-          </button>
-          <button className="text-gray-400 hover:text-gray-900 transition-colors hidden sm:block">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-          </button>
-          <div className="h-8 w-px bg-gray-200 dark:bg-gray-800 mx-2"></div>
-          <div className="flex items-center gap-3">
-             <div className="text-right hidden sm:block">
-                <p className="text-sm font-bold leading-tight">{profile?.full_name}</p>
-                <p className="text-[10px] opacity-60 uppercase tracking-widest font-bold">Student</p>
-             </div>
-             <div className="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-800 font-bold overflow-hidden shadow-sm">
-                {/* Dicebear generates beautiful geometric avatars for us! */}
-                <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${user.id}`} alt="avatar" />
-             </div>
-          </div>
-        </div>
-      </div>
-
+      {/* 1. Header Row */}
+      <PageHeader
+        breadcrumb="STUDENT PORTAL / TAQWA SPACE"
+        title={`Assalamu Alaikum, ${profile?.full_name?.split(" ")[0] || "Student"}`}
+        subtitle="Welcome to your Personal Taqwa Space."
+        actions={<CreateHabitButton books={libraryBooks || []} />}
+      />
       {/* 2. Top Stats Row (Streak & Overall Completion) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         {/* Streak Card */}
@@ -328,3 +305,5 @@ export default async function StudentDashboard() {
     </div>
   )
 }
+
+

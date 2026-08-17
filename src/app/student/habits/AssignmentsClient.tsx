@@ -1,4 +1,6 @@
-'use client'
+﻿'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
 
 import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
@@ -163,7 +165,7 @@ export default function AssignmentsClient({
     if (u.toLowerCase() === 'roba') {
       const j = Math.ceil(pt / 4)
       const r = ((pt - 1) % 4) + 1
-      return `Juz ${j} • Roba #${r}`
+      return `Juz ${j} â€¢ Roba #${r}`
     }
     if (!isReadingItem && u.toLowerCase() === 'times') {
       return `Day #${pt}`
@@ -217,32 +219,18 @@ export default function AssignmentsClient({
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-[#fbfbfb] dark:bg-[#0a0a0a]">
-      {/* TOP HEADER */}
-      <header className="flex items-center justify-between px-8 py-5 bg-white dark:bg-[#111] border-b border-black/5 dark:border-white/5 sticky top-0 z-10">
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold text-[#092B2B] dark:text-white">Master Assignments Library</h1>
-          <span className="text-xs font-black bg-[#dcf5ea] dark:bg-emerald-900/40 text-[#0a6c4c] dark:text-emerald-300 px-3 py-1 rounded-full uppercase tracking-wider">
-            {totalCount} Total
-          </span>
-        </div>
-
-        <div className="flex items-center gap-5">
-          {/* Bell Icon */}
-          <button type="button" className="p-2 text-gray-400 hover:text-gray-700 dark:hover:text-white transition-colors">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-          </button>
-
-          <div className="flex items-center gap-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{profile?.full_name || 'Student'}</p>
-              <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">All Enrolled Courses</p>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900/30 border-2 border-white dark:border-gray-800 flex items-center justify-center font-bold text-primary-700 dark:text-primary-300">
-              {profile?.full_name?.charAt(0) || 'S'}
-            </div>
-          </div>
-        </div>
-      </header>
+      <div className="px-4 md:px-8 pt-4 md:pt-8">
+        <PageHeader
+          breadcrumb="STUDENT PORTAL / MY HABITS"
+          title="Master Habits Library"
+          subtitle="Track and complete all daily habits, Quran recitations, and spiritual trackers."
+          actions={
+            <span className="text-xs font-black bg-[#dcf5ea] dark:bg-emerald-900/40 text-[#0a6c4c] dark:text-emerald-300 px-3 py-1.5 rounded-full uppercase tracking-wider">
+              {totalCount} Total Habits
+            </span>
+          }
+        />
+      </div>
 
       {/* MAIN CONTENT AREA */}
       <main className="p-8 max-w-[1200px] w-full mx-auto space-y-8">
@@ -396,7 +384,7 @@ export default function AssignmentsClient({
                       {/* Starting Point Indicator */}
                       {(cat === 'Reading' || assignment.content?.linkedBookId || assignment.linked_book_id) && (
                         <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50/90 dark:bg-emerald-950/40 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold">
-                          <span>✨ Today's Starting Point:</span>
+                          <span>âœ¨ Today's Starting Point:</span>
                           <span className="underline decoration-emerald-500/60 font-mono">
                             {formatUnitAndPoint(progInfo.unit, startingPoint)}
                           </span>
@@ -411,7 +399,7 @@ export default function AssignmentsClient({
                           <span className="text-gray-400">Progress</span>
                           <span className="text-[#092B2B] dark:text-gray-300">
                             {progInfo.unit === '%' || progInfo.unit.toLowerCase() === 'percentage'
-                              ? `${progInfo.current}% → 0%`
+                              ? `${progInfo.current}% â†’ 0%`
                               : `${progInfo.current} / ${progInfo.target} ${progInfo.unit}`}
                           </span>
                         </div>
@@ -428,11 +416,11 @@ export default function AssignmentsClient({
                         </div>
                         {((progInfo.unit !== '%' && progInfo.current > progInfo.target) || ((progInfo.unit === '%' || progInfo.unit.toLowerCase() === 'percentage') && progInfo.current === 0)) && (
                           <p className="text-[11px] text-emerald-700 dark:text-emerald-300 mt-2 font-bold truncate bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-xl border border-emerald-500/20 flex items-center gap-1.5">
-                            <span>🎉</span>
+                            <span>ðŸŽ‰</span>
                             <span className="truncate">
                               {(progInfo.unit === '%' || progInfo.unit.toLowerCase() === 'percentage')
                                 ? `MashAllah! You reached 0% today!`
-                                : `MashAllah! Goal done (+${progInfo.current - progInfo.target} ${progInfo.unit.toLowerCase() === 'times' ? '' : progInfo.unit.toLowerCase() + ' '}extra) • Next: ${formatUnitAndPoint(progInfo.unit, startingPoint + progInfo.current, cat === 'Reading' || Boolean(assignment.content?.linkedBookId) || Boolean(assignment.linked_book_id))}`}
+                                : `MashAllah! Goal done (+${progInfo.current - progInfo.target} ${progInfo.unit.toLowerCase() === 'times' ? '' : progInfo.unit.toLowerCase() + ' '}extra) â€¢ Next: ${formatUnitAndPoint(progInfo.unit, startingPoint + progInfo.current, cat === 'Reading' || Boolean(assignment.content?.linkedBookId) || Boolean(assignment.linked_book_id))}`}
                             </span>
                           </p>
                         )}
@@ -448,14 +436,14 @@ export default function AssignmentsClient({
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-500/20 shadow-sm transition-all"
                             >
-                              <span>🔗 Open Book Link ›</span>
+                              <span>ðŸ”— Open Book Link â€º</span>
                             </a>
                           ) : (
                             <Link
                               href={getReadingLink(assignment)}
                               className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl font-bold text-xs bg-emerald-50 text-emerald-800 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-500/20 shadow-sm transition-all"
                             >
-                              <span>Read Online ›</span>
+                              <span>Read Online â€º</span>
                             </Link>
                           )
                         )}
@@ -469,7 +457,7 @@ export default function AssignmentsClient({
                             href={`/student/class/${assignment.class_id}`}
                             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-xs bg-[#033c2b] text-white hover:bg-[#064e3b] shadow-sm transition-all"
                           >
-                            <span>Go to Class ›</span>
+                            <span>Go to Class â€º</span>
                           </Link>
                         )}
                       </div>
@@ -482,7 +470,7 @@ export default function AssignmentsClient({
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-4 px-2">
                   <p className="text-xs font-bold text-gray-500">
-                    Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} – {Math.min(currentPage * ITEMS_PER_PAGE, filteredAssignments.length)} of {filteredAssignments.length} assignments
+                    Showing {(currentPage - 1) * ITEMS_PER_PAGE + 1} â€“ {Math.min(currentPage * ITEMS_PER_PAGE, filteredAssignments.length)} of {filteredAssignments.length} assignments
                   </p>
 
                   <div className="flex items-center gap-2">
@@ -496,7 +484,7 @@ export default function AssignmentsClient({
                           : 'bg-white dark:bg-[#111] border border-black/5 dark:border-white/10 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 shadow-sm'
                       }`}
                     >
-                      ‹ Previous
+                      â€¹ Previous
                     </button>
 
                     <div className="flex items-center gap-1">
@@ -526,7 +514,7 @@ export default function AssignmentsClient({
                           : 'bg-white dark:bg-[#111] border border-black/5 dark:border-white/10 text-gray-700 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5 shadow-sm'
                       }`}
                     >
-                      Next ›
+                      Next â€º
                     </button>
                   </div>
                 </div>

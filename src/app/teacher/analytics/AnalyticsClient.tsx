@@ -1,4 +1,6 @@
-'use client'
+﻿'use client'
+
+import PageHeader from '@/components/ui/PageHeader'
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
@@ -449,58 +451,53 @@ export default function AnalyticsClient({
     <div className="space-y-8 animate-in fade-in duration-500 font-sans pb-12">
       
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-black/5 dark:border-white/5 pb-6">
-        <div>
-          <p className="text-xs font-extrabold text-gray-400 uppercase tracking-widest mb-2">Portal <span className="mx-1">/</span> <span className="text-[#092B2B] dark:text-emerald-500">Analytics</span></p>
-          <h1 className="text-4xl font-bold mb-1 font-arabic tracking-tight text-[#092B2B] dark:text-white">Classroom Performance Analytics</h1>
-          <p className="text-sm text-gray-500 font-medium">
-            Real-time spiritual progress, daily habits completion rates, and student engagement metrics.
-          </p>
-        </div>
-
-        {/* Filter Controls */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Class Selector */}
-          <div className="bg-white dark:bg-[#1a1a1a] p-1.5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex items-center gap-2">
-            <span className="text-[10px] font-extrabold uppercase text-gray-400 pl-3">Class:</span>
-            <select
-              value={selectedClassId}
-              onChange={(e) => setSelectedClassId(e.target.value)}
-              className="bg-[#f4f7f6] dark:bg-black/50 border border-black/5 dark:border-white/5 rounded-xl px-3 py-1.5 text-xs font-bold text-[#092B2B] dark:text-white focus:outline-none"
-            >
-              <option value="all">All Classrooms ({classes.length})</option>
-              {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Timeframe Toggle Pills */}
-          <div className="flex bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/5 shadow-sm p-1.5 rounded-2xl">
-            <button
-              onClick={() => setTimeframe('7d')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                timeframe === '7d' 
-                  ? 'bg-[#092B2B] dark:bg-emerald-600 text-white shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              7 Days
-            </button>
-            <button
-              onClick={() => setTimeframe('30d')}
-              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                timeframe === '30d' 
-                  ? 'bg-[#092B2B] dark:bg-emerald-600 text-white shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-              }`}
-            >
-              30 Days
-            </button>
-          </div>
-        </div>
+      <div className="border-b border-black/5 dark:border-white/5 pb-4">
+        <PageHeader
+          breadcrumb="PORTAL / ANALYTICS"
+          title="Classroom Performance Analytics"
+          subtitle="Real-time spiritual progress, daily habits completion rates, and student engagement metrics."
+          className="mb-2"
+          actions={
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="bg-white dark:bg-[#1a1a1a] p-1.5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm flex items-center gap-2">
+                <span className="text-[10px] font-extrabold uppercase text-gray-400 pl-3">Class:</span>
+                <select
+                  value={selectedClassId}
+                  onChange={(e) => setSelectedClassId(e.target.value)}
+                  className="bg-[#f4f7f6] dark:bg-black/50 border border-black/5 dark:border-white/5 rounded-xl px-3 py-1.5 text-xs font-bold text-[#092B2B] dark:text-white focus:outline-none"
+                >
+                  <option value="all">All Classrooms ({classes.length})</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex bg-white dark:bg-[#1a1a1a] border border-black/5 dark:border-white/5 shadow-sm p-1.5 rounded-2xl">
+                <button
+                  onClick={() => setTimeframe("7d")}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    timeframe === "7d"
+                      ? "bg-[#092B2B] dark:bg-emerald-600 text-white shadow-sm"
+                      : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  }`}
+                >
+                  7 Days
+                </button>
+                <button
+                  onClick={() => setTimeframe("30d")}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    timeframe === "30d"
+                      ? "bg-[#092B2B] dark:bg-emerald-600 text-white shadow-sm"
+                      : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                  }`}
+                >
+                  30 Days
+                </button>
+              </div>
+            </div>
+          }
+        />
       </div>
-
       {/* STATS OVERVIEW CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         

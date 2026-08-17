@@ -1,7 +1,6 @@
-import { redirect } from 'next/navigation'
+﻿import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
-import Link from 'next/link'
-import StudentSidebar from '@/components/student/StudentSidebar'
+import StudentLayoutClient from '@/components/student/StudentLayoutClient'
 
 export default async function StudentLayout({
   children,
@@ -36,25 +35,15 @@ export default async function StudentLayout({
     .eq('classes.is_active', true)
     .limit(1)
 
-  const hasClasses = enrollments && enrollments.length > 0
+  const hasClasses = Boolean(enrollments && enrollments.length > 0)
 
   return (
-    <div className="min-h-screen flex bg-[#fbfbfb] dark:bg-background font-sans">
-      {/* LEFT SIDEBAR NAVIGATION */}
-      <StudentSidebar hasClasses={hasClasses} />
-
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 flex flex-col min-h-screen min-w-0 overflow-y-auto overflow-x-hidden relative">
-        {/* Mobile Header (Shown only on small screens) */}
-        <header className="lg:hidden h-16 border-b border-black/5 bg-white flex items-center px-4 justify-between sticky top-0 z-20">
-          <h1 className="font-bold text-primary-800">Al-Mu'allim</h1>
-          <button className="p-2 bg-gray-100 rounded-lg"><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg></button>
-        </header>
-        
-        {/* Page Content */}
-        {children}
-        {modal}
-      </main>
-    </div>
+    <StudentLayoutClient
+      profileName={profile?.full_name || 'Student'}
+      hasClasses={hasClasses}
+      modal={modal}
+    >
+      {children}
+    </StudentLayoutClient>
   )
 }
