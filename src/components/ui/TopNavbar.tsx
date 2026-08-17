@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import React from 'react'
+import Link from 'next/link'
 
 interface TopNavbarProps {
   portalName: string
@@ -16,6 +17,7 @@ export default function TopNavbar({
   onMenuClick,
 }: TopNavbarProps) {
   const initial = userName?.charAt(0).toUpperCase() || 'U'
+  const homeHref = portalName.toLowerCase().includes('teacher') ? '/teacher/dashboard' : '/student/dashboard'
 
   return (
     <header className="h-16 md:h-20 border-b border-black/5 dark:border-white/5 bg-white/90 dark:bg-black/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 md:px-8 transition-all">
@@ -33,9 +35,13 @@ export default function TopNavbar({
             </svg>
           </button>
         )}
-        <div className="flex items-center gap-2.5">
+        <Link
+          href={homeHref}
+          className="flex items-center gap-2.5 group transition-opacity hover:opacity-85"
+          title="Go to Dashboard"
+        >
           {/* Geometric Brand Logo Mark */}
-          <div className="w-8 h-8 md:w-9 md:h-9 bg-[#bdf3df]/60 dark:bg-emerald-950/60 border border-emerald-300/40 dark:border-emerald-700/50 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+          <div className="w-8 h-8 md:w-9 md:h-9 bg-[#bdf3df]/60 dark:bg-emerald-950/60 border border-emerald-300/40 dark:border-emerald-700/50 rounded-xl flex items-center justify-center shadow-sm shrink-0 group-hover:scale-105 transition-transform">
             <div className="w-4 h-4 bg-emerald-600 dark:bg-emerald-400 rounded-full flex items-center justify-center">
               <div className="w-1.5 h-1.5 bg-white dark:bg-black rounded-[1px] rotate-45"></div>
             </div>
@@ -46,7 +52,7 @@ export default function TopNavbar({
           <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 hidden sm:inline-block">
             {portalName}
           </span>
-        </div>
+        </Link>
       </div>
 
       {/* Right: Notification Bell + User Profile Badge */}
