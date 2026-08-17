@@ -4,7 +4,7 @@ import LibraryClient from './LibraryClient'
 
 export const dynamic = 'force-dynamic'
 
-export default async function StudentLibraryPage() {
+export default async function TeacherLibraryPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -12,31 +12,28 @@ export default async function StudentLibraryPage() {
     redirect('/login')
   }
 
-  // Fetch student profile
+  // Fetch teacher profile
   const { data: profile } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
 
-  // 1. Fetch active classes the student has joined
-  const { data: enrollments } = await supabase
-    .from('class_students')
-    .select('class_id, classes(is_active)')
-    .eq('student_id', user.id)
+  // Fetch teacher's active classes
+  const { data: teacherClasses } = await supabase
+    .from('classes')
+    .select('id')
+    .eq('teacher_id', user.id)
 
-  const classIds = (enrollments || [])
-    .filter((e: any) => e.classes?.is_active !== false)
-    .map((e: any) => e.class_id)
-    .filter(Boolean)
+  const teacherClassIds = teacherClasses?.map(c => c.id) || []
 
-  // 3-TIER RULE: Fetch Personal Books (uploaded_by = user.id AND class_id IS NULL) + Enrolled Class Books
+  // 3-TIER RULE: Fetch Personal Books (uploaded_by = user.id AND class_id IS NULL) + Teacher's Class Books
   let books: any[] = []
   
   try {
     let query = supabase.from('books').select('*')
-    if (classIds.length > 0) {
-      query = query.or(`and(class_id.is.null,uploaded_by.eq.${user.id}),class_id.in.(${classIds.join(',')})`)
+    if (teacherClassIds.length > 0) {
+      query = query.or(`and(class_id.is.null,uploaded_by.eq.${user.id}),class_id.in.(${teacherClassIds.join(',')})`)
     } else {
       query = query.is('class_id', null).eq('uploaded_by', user.id)
     }

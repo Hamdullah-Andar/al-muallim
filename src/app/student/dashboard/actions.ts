@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { createClient } from '@/utils/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -66,6 +66,8 @@ export async function toggleAssignmentProgress(assignmentId: string, isCompleted
   revalidatePath('/student/dashboard')
   revalidatePath('/student/analytics')
   revalidatePath('/student/assignments')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/habits')
   revalidatePath('/student', 'layout')
   revalidatePath('/teacher/dashboard')
   revalidatePath('/teacher/analytics')
@@ -99,6 +101,8 @@ export async function incrementZikrProgress(assignmentId: string, newCount: numb
   revalidatePath('/student/dashboard')
   revalidatePath('/student/analytics')
   revalidatePath('/student/assignments')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/habits')
   revalidatePath('/student', 'layout')
   revalidatePath('/teacher/dashboard')
   revalidatePath('/teacher/analytics')
@@ -141,7 +145,7 @@ export async function togglePrayerMask(assignmentId: string, maskValue: number) 
 
   const upsertRows = prayerAssignmentIds.map((id: string) => ({
     student_id: user.id,
-    assignment_id: id,
+        assignment_id: id,
     tracking_date: todayDate,
     is_completed: maskValue === 31, // 31 means all 5 prayers checked (1+2+4+8+16)
     completed_value: maskValue
@@ -159,6 +163,8 @@ export async function togglePrayerMask(assignmentId: string, maskValue: number) 
   revalidatePath('/student/dashboard')
   revalidatePath('/student/analytics')
   revalidatePath('/student/assignments')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/habits')
   revalidatePath('/student', 'layout')
   revalidatePath('/teacher/dashboard')
   revalidatePath('/teacher/analytics')
@@ -195,6 +201,8 @@ export async function updateMankiratProgress(assignmentId: string, sensesData: a
   revalidatePath('/student/dashboard')
   revalidatePath('/student/analytics')
   revalidatePath('/student/assignments')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/habits')
   revalidatePath('/student', 'layout')
   revalidatePath('/teacher/dashboard')
   revalidatePath('/teacher/analytics')
@@ -232,6 +240,7 @@ export async function syncLibraryPortionRead(
       .upsert(
         {
           student_id: user.id,
+        user_id: user.id,
           book_id: bookId,
           book_title: customBookTitle || (isQuranBook ? 'The Holy Quran' : 'Library Book'),
           file_url: fileUrl || null,
@@ -354,6 +363,8 @@ export async function syncLibraryPortionRead(
   revalidatePath('/student/dashboard')
   revalidatePath('/student/analytics')
   revalidatePath('/student/assignments')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/habits')
   revalidatePath('/student/library')
   revalidatePath('/student', 'layout')
 }
@@ -399,6 +410,7 @@ export async function createPersonalHabit(formData: FormData) {
       {
         class_id: null,
         student_id: user.id,
+        user_id: user.id,
         category,
         title,
         tracking_type: trackingType === 'percentage' ? 'counter' : trackingType,
@@ -414,4 +426,6 @@ export async function createPersonalHabit(formData: FormData) {
 
   revalidatePath('/student/dashboard')
   revalidatePath('/student/assignments')
+  revalidatePath('/teacher/dashboard')
+  revalidatePath('/teacher/habits')
 }

@@ -25,8 +25,16 @@ export default async function TeacherLayout({
     redirect('/dashboard') // Sends students back to router
   }
 
+  // Check if teacher has created any classes
+  const { count } = await supabase
+    .from('classes')
+    .select('*', { count: 'exact', head: true })
+    .eq('teacher_id', user.id)
+
+  const hasClasses = (count || 0) > 0
+
   return (
-    <TeacherLayoutClient profileName={profile?.full_name || 'Teacher'}>
+    <TeacherLayoutClient profileName={profile?.full_name || 'Teacher'} hasClasses={hasClasses}>
       {children}
     </TeacherLayoutClient>
   )

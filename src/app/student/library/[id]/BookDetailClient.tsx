@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -543,7 +543,7 @@ The book is widely considered one of the most important works in the Islamic wor
                         initialAssignmentId || null,
                         book.title,
                         book.completedPages || 1,
-                        book.file_url || ''
+                        (book as any)?.file_url || (book as any)?.fileUrl || ''
                       )
                       setLoggedPortionsToday(prev => prev + 1)
                     } catch (error) {

@@ -6,10 +6,11 @@ import TeacherSidebar from '@/components/teacher/TeacherSidebar'
 
 interface TeacherLayoutClientProps {
   profileName: string
+  hasClasses?: boolean
   children: React.ReactNode
 }
 
-export default function TeacherLayoutClient({ profileName, children }: TeacherLayoutClientProps) {
+export default function TeacherLayoutClient({ profileName, hasClasses = false, children }: TeacherLayoutClientProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   return (
@@ -25,7 +26,7 @@ export default function TeacherLayoutClient({ profileName, children }: TeacherLa
       <div className="flex-1 flex overflow-hidden">
         {/* DESKTOP SIDEBAR */}
         <aside className="w-64 bg-white dark:bg-black border-r border-black/5 dark:border-white/5 hidden md:flex flex-col shadow-sm shrink-0">
-          <TeacherSidebar />
+          <TeacherSidebar hasClasses={hasClasses} />
         </aside>
 
         {/* MOBILE DRAWER OVERLAY & SIDEBAR */}
@@ -49,7 +50,7 @@ export default function TeacherLayoutClient({ profileName, children }: TeacherLa
                   </svg>
                 </button>
               </div>
-              <TeacherSidebar onLinkClick={() => setIsMobileOpen(false)} />
+              <TeacherSidebar hasClasses={hasClasses} onLinkClick={() => setIsMobileOpen(false)} />
             </div>
           </div>
         )}

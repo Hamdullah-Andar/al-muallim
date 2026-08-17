@@ -4,7 +4,7 @@ import AssignmentsClient from './AssignmentsClient'
 
 export const dynamic = 'force-dynamic'
 
-export default async function StudentAssignmentsPage() {
+export default async function TeacherHabitsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   
@@ -12,38 +12,22 @@ export default async function StudentAssignmentsPage() {
     redirect('/login')
   }
 
+
+
   // 1. Fetch Profile Data
   const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
 
-  // 2. Fetch Enrolled Classes
-  const { data: enrollments } = await supabase
-    .from('class_students')
-    .select('class_id, classes(id, name, description, teacher_id)')
-    .eq('student_id', user.id)
-    .eq('is_active', true)
-
-  const classMap: Record<string, { id: string; name: string; description: string }> = {}
-  enrollments?.forEach((e: any) => {
-    if (e.classes) {
-      classMap[e.class_id] = {
-        id: e.class_id,
-        name: e.classes.name || 'Class',
-        description: e.classes.description || ''
-      }
-    }
-  })
-
-  // 3. Fetch ONLY Personal assignments (Habits)
-  const { data: classAssignments } = await supabase
+  // 2. Fetch Teacher's Personal Habits (assignments with class_id null)
+  const { data: teacherAssignments } = await supabase
     .from('assignments')
     .select('*')
     .is('class_id', null)
     .eq('student_id', user.id)
     .order('created_at', { ascending: false })
     
-  let assignments: any[] = classAssignments || []
+  let assignments: any[] = teacherAssignments || []
 
-  // 4. Fetch progress for TODAY + all historical progress
+  // 3. Fetch progress for TODAY + all historical progress
   const todayDateStr = new Date().toISOString().split('T')[0]
   const { data: progress } = await supabase
     .from('student_progress')
@@ -89,7 +73,7 @@ export default async function StudentAssignmentsPage() {
       user={user}
       profile={profile}
       assignments={assignments}
-      classMap={classMap}
+      classMap={{}}
       initialProgress={enrichedProgress}
       todayDateStr={todayDateStr}
     />
