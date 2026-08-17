@@ -25,14 +25,6 @@ export default function TeacherLayoutClient({ profileName, children }: TeacherLa
       <div className="flex-1 flex overflow-hidden">
         {/* DESKTOP SIDEBAR */}
         <aside className="w-64 bg-white dark:bg-black border-r border-black/5 dark:border-white/5 hidden md:flex flex-col shadow-sm shrink-0">
-          <div className="p-6 border-b border-black/5 dark:border-white/5">
-            <h1 className="text-xl font-bold text-primary-800 dark:text-primary-400 font-arabic tracking-wide">
-              Al-Mu'allim
-            </h1>
-            <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-0.5">
-              Teacher Portal
-            </p>
-          </div>
           <TeacherSidebar />
         </aside>
 
@@ -46,15 +38,8 @@ export default function TeacherLayoutClient({ profileName, children }: TeacherLa
             />
             {/* Drawer */}
             <div className="relative w-[280px] max-w-[80vw] bg-white dark:bg-black h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-300">
-              <div className="p-6 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
-                <div>
-                  <h1 className="text-lg font-bold text-primary-800 dark:text-primary-400 font-arabic">
-                    Al-Mu'allim
-                  </h1>
-                  <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest">
-                    Teacher Portal
-                  </p>
-                </div>
+              <div className="p-4 border-b border-black/5 dark:border-white/5 flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-widest px-2">Navigation Menu</span>
                 <button
                   onClick={() => setIsMobileOpen(false)}
                   className="p-2 rounded-xl text-gray-500 hover:text-black dark:hover:text-white"

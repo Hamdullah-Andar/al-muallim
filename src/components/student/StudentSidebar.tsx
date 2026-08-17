@@ -88,19 +88,9 @@ export default function StudentSidebar({ hasClasses = false, onLinkClick }: Stud
 
   return (
     <aside className="w-[280px] bg-white dark:bg-black border-r border-black/5 dark:border-white/5 flex flex-col h-full shadow-sm">
-      <div className="p-8 flex flex-col items-center border-b border-black/5 dark:border-white/5">
-        <div className="w-16 h-16 bg-[#bdf3df]/40 rounded-2xl flex items-center justify-center mb-4 shadow-inner">
-           <div className="w-8 h-8 bg-[#bdf3df] rounded-full flex items-center justify-center shadow-sm">
-              <div className="w-3 h-3 bg-white rounded-[2px] rotate-45"></div>
-           </div>
-        </div>
-        <h1 className="text-xl font-bold text-primary-800 dark:text-primary-400 tracking-tight">Al-Mu'allim</h1>
-        <p className="text-[10px] opacity-50 font-bold uppercase tracking-widest mt-1">Student Portal</p>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto pb-4">
+      <div className="flex-1 overflow-y-auto pb-4 pt-4">
         {/* MY TAQWA SPACE */}
-        <div className="px-6 pt-6 pb-2">
+        <div className="px-6 pt-2 pb-2">
           <p className="text-[10px] font-black tracking-widest text-gray-400 dark:text-gray-500 uppercase mb-3 px-4">
             My Taqwa Space
           </p>
