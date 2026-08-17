@@ -33,11 +33,17 @@ export default function TopNavbar({
             </svg>
           </button>
         )}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          {/* Geometric Brand Logo Mark */}
+          <div className="w-8 h-8 md:w-9 md:h-9 bg-[#bdf3df]/60 dark:bg-emerald-950/60 border border-emerald-300/40 dark:border-emerald-700/50 rounded-xl flex items-center justify-center shadow-sm shrink-0">
+            <div className="w-4 h-4 bg-emerald-600 dark:bg-emerald-400 rounded-full flex items-center justify-center">
+              <div className="w-1.5 h-1.5 bg-white dark:bg-black rounded-[1px] rotate-45"></div>
+            </div>
+          </div>
           <span className="text-lg md:text-xl font-bold text-primary-800 dark:text-primary-400 font-arabic tracking-wide">
             Al-Mu'allim
           </span>
-          <span className="text-[10px] font-extrabold uppercase tracking-widest px-2 py-0.5 rounded-full bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 hidden sm:inline-block">
+          <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-primary-50 text-primary-700 dark:bg-primary-950/40 dark:text-primary-300 hidden sm:inline-block">
             {portalName}
           </span>
         </div>
