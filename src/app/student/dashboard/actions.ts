@@ -240,8 +240,7 @@ export async function syncLibraryPortionRead(
       .upsert(
         {
           student_id: user.id,
-        user_id: user.id,
-          book_id: bookId,
+        book_id: bookId,
           book_title: customBookTitle || (isQuranBook ? 'The Holy Quran' : 'Library Book'),
           file_url: fileUrl || null,
           current_page: newPage,
@@ -410,7 +409,6 @@ export async function createPersonalHabit(formData: FormData) {
       {
         class_id: null,
         student_id: user.id,
-        user_id: user.id,
         category,
         title,
         tracking_type: trackingType === 'percentage' ? 'counter' : trackingType,

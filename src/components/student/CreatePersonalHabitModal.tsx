@@ -1,6 +1,7 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createPersonalHabit } from '@/app/student/dashboard/actions'
 
 export default function CreatePersonalHabitModal({ 
@@ -12,6 +13,7 @@ export default function CreatePersonalHabitModal({
   setIsOpen: (v: boolean) => void,
   books?: any[]
 }) {
+  const router = useRouter()
   const [category, setCategory] = useState('Zikr')
   const [customCategory, setCustomCategory] = useState('')
   const [trackingType, setTrackingType] = useState<'checkbox' | 'counter' | 'percentage'>('counter')
@@ -69,6 +71,7 @@ export default function CreatePersonalHabitModal({
 
     try {
       await createPersonalHabit(formData)
+      router.refresh()
       setIsOpen(false)
       alert(`Personal habit created successfully!`)
       // Reset form defaults for next time
@@ -188,7 +191,7 @@ export default function CreatePersonalHabitModal({
                   onClick={() => setReadingSource('quran')}
                   className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 ${readingSource === 'quran' ? 'border-emerald-600 bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 font-bold' : 'border-black/5 dark:border-white/10 text-gray-600 dark:text-gray-400'}`}
                 >
-                  <span className="text-base">📖</span>
+                  <span className="text-base">ðŸ“–</span>
                   <span className="text-xs font-bold leading-tight">Quran</span>
                   <span className="text-[9px] opacity-75 leading-tight">Quran.com</span>
                 </button>
@@ -197,7 +200,7 @@ export default function CreatePersonalHabitModal({
                   onClick={() => setReadingSource('library')}
                   className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 ${readingSource === 'library' ? 'border-emerald-600 bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 font-bold' : 'border-black/5 dark:border-white/10 text-gray-600 dark:text-gray-400'}`}
                 >
-                  <span className="text-base">📚</span>
+                  <span className="text-base">ðŸ“š</span>
                   <span className="text-xs font-bold leading-tight">Library</span>
                   <span className="text-[9px] opacity-75 leading-tight">Academy Book</span>
                 </button>
@@ -206,7 +209,7 @@ export default function CreatePersonalHabitModal({
                   onClick={() => setReadingSource('link')}
                   className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-1 ${readingSource === 'link' ? 'border-emerald-600 bg-emerald-100/70 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200 font-bold' : 'border-black/5 dark:border-white/10 text-gray-600 dark:text-gray-400'}`}
                 >
-                  <span className="text-base">🔗</span>
+                  <span className="text-base">ðŸ”—</span>
                   <span className="text-xs font-bold leading-tight">Ext. Link</span>
                   <span className="text-[9px] opacity-75 leading-tight">URL / Drive</span>
                 </button>
@@ -286,21 +289,21 @@ export default function CreatePersonalHabitModal({
               <div className="grid grid-cols-3 gap-3">
                 <label className={`cursor-pointer border-2 rounded-xl p-3 flex flex-col items-center text-center transition-all ${trackingType === 'counter' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
                   <input type="radio" name="trackingType" value="counter" checked={trackingType === 'counter'} onChange={() => setTrackingType('counter')} className="hidden" />
-                  <span className="text-2xl mb-1">🔢</span>
+                  <span className="text-2xl mb-1">ðŸ”¢</span>
                   <span className="font-bold text-xs">Target Number</span>
                   <span className="text-[10px] opacity-60 mt-0.5">Has exact count</span>
                 </label>
                 <label className={`cursor-pointer border-2 rounded-xl p-3 flex flex-col items-center text-center transition-all ${trackingType === 'checkbox' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
                   <input type="radio" name="trackingType" value="checkbox" checked={trackingType === 'checkbox'} onChange={() => setTrackingType('checkbox')} className="hidden" />
-                  <span className="text-2xl mb-1">✅</span>
+                  <span className="text-2xl mb-1">âœ…</span>
                   <span className="font-bold text-xs">Done / Not Done</span>
                   <span className="text-[10px] opacity-60 mt-0.5">Simple checkbox</span>
                 </label>
                 <label className={`cursor-pointer border-2 rounded-xl p-3 flex flex-col items-center text-center transition-all ${trackingType === 'percentage' ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400' : 'border-black/5 dark:border-white/5 hover:border-black/20'}`}>
                   <input type="radio" name="trackingType" value="percentage" checked={trackingType === 'percentage'} onChange={() => setTrackingType('percentage')} className="hidden" />
-                  <span className="text-2xl mb-1">📊</span>
+                  <span className="text-2xl mb-1">ðŸ“Š</span>
                   <span className="font-bold text-xs">Percentage (%)</span>
-                  <span className="text-[10px] opacity-60 mt-0.5">Reduce 100% → 0%</span>
+                  <span className="text-[10px] opacity-60 mt-0.5">Reduce 100% â†’ 0%</span>
                 </label>
               </div>
             </div>
