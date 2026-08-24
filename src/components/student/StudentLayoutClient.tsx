@@ -6,6 +6,7 @@ import StudentSidebar from '@/components/student/StudentSidebar'
 
 interface StudentLayoutClientProps {
   profileName: string
+  userEmail?: string
   hasClasses: boolean
   children: React.ReactNode
   modal: React.ReactNode
@@ -13,6 +14,7 @@ interface StudentLayoutClientProps {
 
 export default function StudentLayoutClient({
   profileName,
+  userEmail,
   hasClasses,
   children,
   modal,
@@ -25,6 +27,7 @@ export default function StudentLayoutClient({
       <TopNavbar
         portalName="Student Portal"
         userName={profileName}
+        userEmail={userEmail}
         userRole="Student"
         onMenuClick={() => setIsMobileOpen(true)}
       />

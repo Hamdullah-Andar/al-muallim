@@ -19,7 +19,7 @@ export default async function StudentLayout({
   // Verify role
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name')
+    .select('role, full_name, email')
     .eq('id', user.id)
     .single()
 
@@ -40,6 +40,7 @@ export default async function StudentLayout({
   return (
     <StudentLayoutClient
       profileName={profile?.full_name || 'Student'}
+      userEmail={profile?.email || user.email || ''}
       hasClasses={hasClasses}
       modal={modal}
     >

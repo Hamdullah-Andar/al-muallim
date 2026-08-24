@@ -17,7 +17,7 @@ export default async function TeacherLayout({
   // Verify role (Extra security layer)
   const { data: profile } = await supabase
     .from('profiles')
-    .select('role, full_name')
+    .select('role, full_name, email')
     .eq('id', user.id)
     .single()
 
@@ -34,7 +34,8 @@ export default async function TeacherLayout({
   const hasClasses = (count || 0) > 0
 
   return (
-    <TeacherLayoutClient profileName={profile?.full_name || 'Teacher'} hasClasses={hasClasses}>
+    <TeacherLayoutClient profileName={profile?.full_name || 'Teacher'}
+      userEmail={profile?.email || user.email || ''} hasClasses={hasClasses}>
       {children}
     </TeacherLayoutClient>
   )

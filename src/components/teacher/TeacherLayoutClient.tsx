@@ -6,11 +6,12 @@ import TeacherSidebar from '@/components/teacher/TeacherSidebar'
 
 interface TeacherLayoutClientProps {
   profileName: string
+  userEmail?: string
   hasClasses?: boolean
   children: React.ReactNode
 }
 
-export default function TeacherLayoutClient({ profileName, hasClasses = false, children }: TeacherLayoutClientProps) {
+export default function TeacherLayoutClient({ profileName, userEmail, hasClasses = false, children }: TeacherLayoutClientProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false)
 
   return (
@@ -19,6 +20,7 @@ export default function TeacherLayoutClient({ profileName, hasClasses = false, c
       <TopNavbar
         portalName="Teacher Portal"
         userName={profileName}
+        userEmail={userEmail}
         userRole="Teacher"
         onMenuClick={() => setIsMobileOpen(true)}
       />
