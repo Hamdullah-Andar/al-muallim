@@ -44,7 +44,7 @@ function getClassVisuals(className: string, index: number) {
 
 function formatClassSchedule(days: string[] | null | undefined, time: string | null | undefined): string {
   if (!days || days.length === 0) return 'Schedule not set'
-  const timeStr = time ? ` Â· ${formatTime12h(time)}` : ''
+  const timeStr = time ? ` \u2022 ${formatTime12h(time)}` : ''
   return days.join(', ') + timeStr
 }
 

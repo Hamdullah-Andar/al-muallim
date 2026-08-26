@@ -1,4 +1,41 @@
-﻿'use client'
+'use client'
+
+function renderSubjectIcon(title: string) {
+  const t = (title || '').toLowerCase()
+  if (t.includes('nawafil') || t.includes('sunnah')) {
+    return (
+      <svg className="w-7 h-7 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+      </svg>
+    )
+  }
+  if (t.includes('quran') || t.includes('recitation') || t.includes('read')) {
+    return (
+      <svg className="w-7 h-7 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+      </svg>
+    )
+  }
+  if (t.includes('guarding') || t.includes('senses') || t.includes('munkarat')) {
+    return (
+      <svg className="w-7 h-7 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    )
+  }
+  if (t.includes('adhkar') || t.includes('zikr') || t.includes('duas')) {
+    return (
+      <svg className="w-7 h-7 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+      </svg>
+    )
+  }
+  return (
+    <svg className="w-7 h-7 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    </svg>
+  )
+}
 
 import PageHeader from '@/components/ui/PageHeader'
 
@@ -371,7 +408,7 @@ export default function AnalyticsDashboardClient({
           {displaySubjects.map((subject, i) => (
             <div key={i} className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex flex-col items-center text-center hover:shadow-md transition-all duration-300 group min-w-0 w-full overflow-hidden">
               <div className="w-14 h-14 rounded-2xl bg-[#F4F7F7] dark:bg-gray-800 flex items-center justify-center text-2xl mb-4 group-hover:scale-110 transition-transform duration-300">
-                {subject.icon}
+                {renderSubjectIcon(subject.title)}
               </div>
               <h4 className="font-bold text-gray-900 dark:text-white text-sm mb-1">{subject.title}</h4>
               {subject.description && <p className="text-[10px] text-gray-400 font-medium mb-3">{subject.description}</p>}
@@ -399,7 +436,7 @@ export default function AnalyticsDashboardClient({
               <div key={idx} className="bg-white dark:bg-[#1a1a1a] rounded-[24px] p-6 shadow-sm border border-gray-100 dark:border-gray-800/60 flex items-center justify-between hover:shadow-md transition-all duration-300 group min-w-0 w-full overflow-hidden">
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="w-12 h-12 rounded-2xl bg-[#F4F7F7] dark:bg-gray-800 flex items-center justify-center text-2xl flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                    {item.icon}
+                    {renderSubjectIcon(item.title)}
                   </div>
                   <div className="min-w-0">
                     <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2.5 py-0.5 rounded-md mb-1 inline-block">
@@ -460,7 +497,7 @@ export default function AnalyticsDashboardClient({
                         {['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map((pr, i) => (
                           <td key={i} className="py-3 px-2 text-center">
                             {item[pr] ? (
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#DCF6EB] text-[#0a6c4c] dark:bg-emerald-900/50 dark:text-emerald-400 font-bold text-xs">âœ“</span>
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-[#DCF6EB] text-[#0a6c4c] dark:bg-emerald-900/50 dark:text-emerald-400 font-bold text-xs">✓</span>
                             ) : (
                               <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-600 text-xs">-</span>
                             )}

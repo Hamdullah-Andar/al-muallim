@@ -50,7 +50,7 @@ function getClassVisuals(className: string, index: number) {
 
 function formatClassSchedule(days: string[] | null, time: string | null): string {
   if (!days || days.length === 0) return 'Schedule not set'
-  const timeStr = time ? ` Â· ${formatTime12h(time)}` : ''
+  const timeStr = time ? ` \u2022 ${formatTime12h(time)}` : ''
   return days.join(', ') + timeStr
 }
 
@@ -269,7 +269,7 @@ export default async function TeacherDashboard() {
   if (thisWeekTotal === 0 && lastWeekTotal === 0) {
     weekOverWeekMessage = 'No activity tracked yet. Encourage students to complete their daily assignments!'
   } else if (lastWeekTotal === 0) {
-    weekOverWeekMessage = `${thisWeekTotal} task${thisWeekTotal !== 1 ? 's' : ''} completed this week â€” great start!`
+    weekOverWeekMessage = `${thisWeekTotal} task${thisWeekTotal !== 1 ? 's' : ''} completed this week — great start!`
   } else {
     const diffPercent = Math.round(((thisWeekTotal - lastWeekTotal) / lastWeekTotal) * 100)
     if (diffPercent > 0) {
@@ -471,7 +471,7 @@ export default async function TeacherDashboard() {
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-[#092B2B] dark:text-white">Advanced Fiqh Q&A</h4>
-                  <p className="text-xs text-gray-500 font-medium">Live Workshop â€¢ 2:00 PM</p>
+                  <p className="text-xs text-gray-500 font-medium">Live Workshop • 2:00 PM</p>
                 </div>
               </div>
 
@@ -482,7 +482,7 @@ export default async function TeacherDashboard() {
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-[#092B2B] dark:text-white">Arabic Grammar I</h4>
-                  <p className="text-xs text-gray-500 font-medium">Video Lecture â€¢ 10:30 AM</p>
+                  <p className="text-xs text-gray-500 font-medium">Video Lecture • 10:30 AM</p>
                 </div>
               </div>
             </div>

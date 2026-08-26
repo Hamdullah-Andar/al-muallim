@@ -433,9 +433,11 @@ export default function LibraryClient({
             <div className="md:col-span-5 flex justify-center md:justify-end">
               <div className="relative w-64 h-40 md:w-72 md:h-44 bg-gradient-to-br from-[#1b3d2f] to-[#0d2219] rounded-2xl p-4 border border-white/15 shadow-2xl rotate-2 transform hover:rotate-0 transition-transform flex items-center gap-4">
                 <div className="w-24 h-32 bg-gradient-to-br from-emerald-800 to-black rounded-lg border border-amber-400/40 shadow-lg flex flex-col items-center justify-center p-2 text-center shrink-0">
-                  <div className="w-6 h-6 rounded-full border border-amber-300/60 flex items-center justify-center mb-1">
-                    <span className="text-[8px] font-bold text-amber-300">Ù†ÙˆØ±</span>
-                  </div>
+                  <div className="w-6 h-6 rounded-full border border-black/20 dark:border-white/30 flex items-center justify-center mb-2">
+                          <svg className="w-3.5 h-3.5 text-gray-800 dark:text-white opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                          </svg>
+                        </div>
                   <p className="text-[9px] font-black text-amber-200 uppercase tracking-tight leading-tight line-clamp-1">{featuredBook.category || 'LIBRARY'}</p>
                   <div className="w-8 h-0.5 bg-amber-400/50 my-1"></div>
                   <p className="text-[7px] text-emerald-200 line-clamp-1">{featuredBook.author || 'Instructor'}</p>
@@ -470,8 +472,7 @@ export default function LibraryClient({
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-[#092B2B] dark:text-white">Continue Reading</h3>
             <button type="button" className="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline">
-              View All History â†’
-            </button>
+              <span>View All History</span><svg className="w-3.5 h-3.5 inline-block ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></button>
           </div>
 
           {continueReadingList.length > 0 ? (
@@ -643,18 +644,25 @@ export default function LibraryClient({
                       </span>
 
                       {/* Book Cover Illustration */}
-                      <div className={`w-32 h-44 rounded-xl bg-gradient-to-br ${item.coverColor} shadow-xl border border-black/10 dark:border-white/10 flex flex-col items-center justify-center p-3 text-center transform group-hover:scale-105 transition-transform`}>
-                        <div className="w-6 h-6 rounded-full border border-black/20 dark:border-white/20 flex items-center justify-center mb-2">
-                          <span className="text-[10px] font-bold opacity-75">ðŸ“–</span>
-                        </div>
-                        <p className="text-xs font-bold text-gray-900 dark:text-white leading-tight line-clamp-3">
-                          {item.title}
-                        </p>
-                        <div className="w-8 h-0.5 bg-black/20 dark:bg-white/20 my-2"></div>
-                        <p className="text-[9px] text-gray-600 dark:text-gray-300 font-medium line-clamp-1">
-                          {item.author}
-                        </p>
-                      </div>
+                      {(() => {
+                        const isDark = (item.coverColor || '').includes('0d3b2c') || (item.coverColor || '').includes('193a2c') || (item.coverColor || '').includes('1b3d2f') || (item.coverColor || '').includes('2e3b4e') || (item.coverColor || '').includes('4a2e18') || (item.coverColor || '').includes('15342a') || (item.coverColor || '').includes('2a3c50') || (item.coverColor || '').includes('3a2c1f');
+                        return (
+                          <div className={`w-32 h-44 rounded-xl bg-gradient-to-br ${item.coverColor} shadow-xl border border-black/10 dark:border-white/10 flex flex-col items-center justify-center p-3 text-center transform group-hover:scale-105 transition-transform`}>
+                            <div className={`w-6 h-6 rounded-full border ${isDark ? 'border-white/30' : 'border-black/20'} flex items-center justify-center mb-2`}>
+                              <svg className={`w-3.5 h-3.5 ${isDark ? 'text-emerald-300' : 'text-gray-800'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                              </svg>
+                            </div>
+                            <p className={`text-xs font-bold leading-tight line-clamp-3 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                              {item.title}
+                            </p>
+                            <div className={`w-8 h-0.5 ${isDark ? 'bg-white/20' : 'bg-black/20'} my-2`}></div>
+                            <p className={`text-[9px] font-medium line-clamp-1 ${isDark ? 'text-emerald-200/90' : 'text-gray-600'}`}>
+                              {item.author}
+                            </p>
+                          </div>
+                        )
+                      })()}
                     </div>
 
                     {/* Book Details */}
@@ -674,7 +682,7 @@ export default function LibraryClient({
                           {item.pages} Pages
                         </span>
                         <span className="flex items-center gap-1 font-bold text-gray-800 dark:text-white">
-                          <span className="text-amber-500">â˜…</span> {item.rating.toFixed(1)}
+                          <span className="inline-flex items-center gap-1 font-bold text-amber-500"><svg className="w-3.5 h-3.5 text-amber-500 fill-amber-500 inline-block mr-0.5" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg> {item.rating.toFixed(1)}</span>
                         </span>
                       </div>
                     </div>
@@ -705,8 +713,8 @@ export default function LibraryClient({
 
                     <div className="flex items-center gap-6 shrink-0 text-xs font-bold">
                       <span className="text-gray-500">{item.pages} Pages</span>
-                      <span className="text-amber-500">â˜… {item.rating.toFixed(1)}</span>
-                      <span className="text-primary-600 dark:text-primary-400">Read â†’</span>
+                      <span className="inline-flex items-center gap-1 font-bold text-amber-500"><svg className="w-3.5 h-3.5 text-amber-500 fill-amber-500 inline-block mr-0.5" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg></span>
+                      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><span>Read</span><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg></span>
                     </div>
                   </div>
                 ))}
@@ -787,7 +795,7 @@ export default function LibraryClient({
 
             <div className="flex items-center justify-between text-xs font-bold bg-gray-50 dark:bg-white/5 p-4 rounded-2xl">
               <span>Pages: {selectedBook.pages}</span>
-              <span>Rating: â˜… {selectedBook.rating.toFixed(1)}</span>
+              <span>Rating: ★ {selectedBook.rating.toFixed(1)}</span>
               <span>Category: {selectedBook.category}</span>
             </div>
 
@@ -825,9 +833,10 @@ export default function LibraryClient({
               <button
                 type="button"
                 onClick={() => setIsRequestModalOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1"
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-white p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                title="Close"
               >
-                âœ•
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
 
@@ -859,12 +868,11 @@ export default function LibraryClient({
                 <button
                   type="button"
                   onClick={() => setIsRequestModalOpen(false)}
-                  className="flex-1 bg-gray-100 dark:bg-white/10 font-bold py-3 rounded-xl text-xs text-gray-700 dark:text-gray-300"
+                  className="flex-1 bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 font-bold py-3 rounded-xl text-xs text-gray-700 dark:text-gray-300 transition-colors"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
+                <button type="submit"
                   className="flex-1 bg-[#092B2B] text-white font-bold py-3 rounded-xl text-xs hover:opacity-90 transition-all shadow-md"
                 >
                   Submit Request
