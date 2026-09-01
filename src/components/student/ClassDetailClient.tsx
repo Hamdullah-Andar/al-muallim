@@ -3,6 +3,7 @@
 import React, { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import DiscussionsTab from '@/components/discussions/DiscussionsTab'
 import { logZikrSession, togglePrayer, logExtraReadingSession } from '@/app/student/class/[id]/actions'
 
 // Helper to determine if a prayer time has arrived (simplified logic)
@@ -44,6 +45,7 @@ export default function ClassDetailClient({
   const [zikrDate, setZikrDate] = useState(new Date().toISOString().slice(0, 16))
 
   // Reading Modal State
+  const [activeTab, setActiveTab] = useState('Overview')
   const [isReadingModalOpen, setIsReadingModalOpen] = useState(false)
   const [selectedReadingId, setSelectedReadingId] = useState('')
   const [readingExtraCount, setReadingExtraCount] = useState<number | ''>(1)
@@ -240,15 +242,31 @@ export default function ClassDetailClient({
           </div>
         </div>
 
-        {/* Grid Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
-          
-          {/* Left Column */}
-          <div className="space-y-8">
-            
-            {/* Top Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+        
+        
+      {/* TABS MENU */}
+      <div className="w-full mb-8">
+        <div className="flex gap-8 border-b border-black/10 dark:border-white/10 overflow-x-auto custom-scrollbar">
+          {['Overview', 'Prayer', 'Reading', 'Zikr', 'Discussions'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`pb-4 text-sm font-bold transition-colors whitespace-nowrap ${
+                activeTab === tab
+                  ? 'text-emerald-600 dark:text-emerald-400 border-b-2 border-emerald-600 dark:border-emerald-400'
+                  : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+      </div>
+
+        {/* Tab Content Section */}
+        <div className="w-full">
+          {activeTab === 'Overview' && (
+            <div className="max-w-2xl mx-auto w-full">
               {/* Course Journey Card */}
               <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5">
                 <div className="flex justify-between items-end mb-6">
@@ -284,7 +302,66 @@ export default function ClassDetailClient({
                   </div>
                 </div>
               </div>
+            </div>
+          )}
 
+          {activeTab === 'Prayer' && (
+            <div className="max-w-2xl mx-auto w-full">
+              {/* Daily Prayer Tracker */}
+              {prayerAssignment && (
+                <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5 relative">
+                  {isPending && <div className="absolute inset-0 bg-white/50 dark:bg-black/50 z-10 rounded-[32px]"></div>}
+                  
+                  <div className="flex justify-between items-start mb-6">
+                    <div className="flex items-center gap-3">
+                      <svg className="w-6 h-6 text-[#092B2B] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                      <h3 className="text-xl font-bold text-[#092B2B] dark:text-white leading-tight">Daily<br/>Prayer</h3>
+                    </div>
+                    <div className="text-right">
+                      <span className="block text-[11px] font-bold opacity-60">Today,</span>
+                      <span className="block text-xs font-black">{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((prayerName) => {
+                      const completed = !!prayerData[prayerName]
+                      const allowed = isPrayerTimeAllowed(prayerName)
+                      
+                      return (
+                        <button 
+                          key={prayerName} 
+                          onClick={() => handlePrayerToggle(prayerName)}
+                          className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border-2 ${
+                            completed 
+                              ? 'bg-[#f0f9f5] border-[#bdf3df]/50 dark:bg-emerald-900/10 dark:border-emerald-500/20' 
+                              : allowed 
+                                ? 'bg-[#fbfbfb] border-transparent hover:border-black/5 dark:bg-white/5 dark:hover:border-white/10'
+                                : 'bg-gray-50 border-transparent opacity-50 cursor-not-allowed dark:bg-white/5'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`font-bold ${completed ? 'text-[#092B2B] dark:text-emerald-400' : 'opacity-70'}`}>{prayerName}</span>
+                            {!allowed && <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7a4 4 0 00-8 0v4h8z" /></svg>}
+                          </div>
+                          <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                            completed 
+                              ? 'bg-[#092B2B] border-[#092B2B] dark:bg-emerald-500 dark:border-emerald-500 text-white' 
+                              : 'border-black/20 dark:border-white/20'
+                          }`}>
+                            {completed && <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'Reading' && (
+            <div className="max-w-2xl mx-auto w-full">
               {/* Current Reading Card */}
               <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5 flex flex-col justify-between">
                 <div>
@@ -391,64 +468,11 @@ export default function ClassDetailClient({
                   </button>
                 )}
               </div>
-
             </div>
+          )}
 
-            {/* Bottom Trackers Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              {/* Daily Prayer Tracker */}
-              {prayerAssignment && (
-                <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5 relative">
-                  {isPending && <div className="absolute inset-0 bg-white/50 dark:bg-black/50 z-10 rounded-[32px]"></div>}
-                  
-                  <div className="flex justify-between items-start mb-6">
-                    <div className="flex items-center gap-3">
-                      <svg className="w-6 h-6 text-[#092B2B] dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                      <h3 className="text-xl font-bold text-[#092B2B] dark:text-white leading-tight">Daily<br/>Prayer</h3>
-                    </div>
-                    <div className="text-right">
-                      <span className="block text-[11px] font-bold opacity-60">Today,</span>
-                      <span className="block text-xs font-black">{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    {['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'].map((prayerName) => {
-                      const completed = !!prayerData[prayerName]
-                      const allowed = isPrayerTimeAllowed(prayerName)
-                      
-                      return (
-                        <button 
-                          key={prayerName} 
-                          onClick={() => handlePrayerToggle(prayerName)}
-                          className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all border-2 ${
-                            completed 
-                              ? 'bg-[#f0f9f5] border-[#bdf3df]/50 dark:bg-emerald-900/10 dark:border-emerald-500/20' 
-                              : allowed 
-                                ? 'bg-[#fbfbfb] border-transparent hover:border-black/5 dark:bg-white/5 dark:hover:border-white/10'
-                                : 'bg-gray-50 border-transparent opacity-50 cursor-not-allowed dark:bg-white/5'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            <span className={`font-bold ${completed ? 'text-[#092B2B] dark:text-emerald-400' : 'opacity-70'}`}>{prayerName}</span>
-                            {!allowed && <svg className="w-3 h-3 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8V7a4 4 0 00-8 0v4h8z" /></svg>}
-                          </div>
-                          <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                            completed 
-                              ? 'bg-[#092B2B] border-[#092B2B] dark:bg-emerald-500 dark:border-emerald-500 text-white' 
-                              : 'border-black/20 dark:border-white/20'
-                          }`}>
-                            {completed && <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
-                          </div>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-
-
+          {activeTab === 'Zikr' && (
+            <div className="max-w-2xl mx-auto w-full">
               {/* Assigned Zikr */}
               <div className="bg-white dark:bg-[#111] rounded-[32px] p-8 shadow-sm border border-black/5 dark:border-white/5">
                 <div className="flex justify-between items-center mb-8">
@@ -505,12 +529,29 @@ export default function ClassDetailClient({
                   </button>
                 )}
               </div>
+            </div>
+          )}
 
+          {activeTab === 'Discussions' && (
+            <div className="max-w-5xl mx-auto w-full">
+              {/* Right Column (Discussions) */}
+          <div className="space-y-8 flex flex-col min-h-[600px]">
+            <div className="bg-white dark:bg-[#111] rounded-[32px] p-2 sm:p-4 shadow-sm border border-black/5 dark:border-white/5 overflow-hidden flex-1 flex flex-col">
+              <div className="p-2 sm:p-4 pb-0 mb-[-10px] z-10 relative shrink-0">
+                 <h3 className="text-xl font-bold text-[#092B2B] dark:text-white leading-tight">Class Forum</h3>
+                 <p className="text-xs opacity-60 mb-2 mt-1">Ask questions and see announcements</p>
+              </div>
+              <div className="flex-1 overflow-hidden relative">
+                 <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-2">
+                   <DiscussionsTab classId={classData.id} role="student" />
+                 </div>
+              </div>
             </div>
           </div>
+            </div>
+          )}
         </div>
-
-        {/* ZIKR MODAL */}
+{/* ZIKR MODAL */}
         {isZikrModalOpen && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
             <div className="bg-white dark:bg-[#111] rounded-[32px] w-full max-w-md p-8 shadow-2xl relative animate-in zoom-in-95 duration-200">

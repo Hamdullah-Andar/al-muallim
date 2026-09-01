@@ -7,6 +7,7 @@ import { uploadClassBook, deleteClassBook, toggleClassActiveStatus, deleteAssign
 import { createClient } from '@/utils/supabase/client'
 
 import AttendanceTab from './AttendanceTab'
+import DiscussionsTab from '@/components/discussions/DiscussionsTab'
 
 interface ClassDetailClientProps {
   classData: any
@@ -141,7 +142,7 @@ export default function ClassDetailClient({ classData, students = [], assignment
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-6xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* HEADER HERO */}
       <div className="bg-primary-900 text-white rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-xl">
@@ -665,6 +666,7 @@ export default function ClassDetailClient({ classData, students = [], assignment
             </div>
             <button
               onClick={() => setIsUploadModalOpen(true)}
+
               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-2xl text-sm flex items-center gap-2 transition-all shadow-md shrink-0"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
@@ -746,12 +748,6 @@ export default function ClassDetailClient({ classData, students = [], assignment
         </div>
       )}
 
-      {/* TAB 5: DISCUSSIONS */}
-      {activeTab === 'discussions' && (
-        <div className="bg-white dark:bg-black/40 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm p-8 text-center">
-          <p className="opacity-60">Class discussions feature active.</p>
-        </div>
-      )}
 
       {/* UPLOAD BOOK MODAL */}
       {isUploadModalOpen && (
@@ -894,6 +890,11 @@ export default function ClassDetailClient({ classData, students = [], assignment
         </div>
       )}
 
-    </div>
+    
+      {/* TAB: DISCUSSIONS */}
+      {activeTab === 'discussions' && (
+        <DiscussionsTab classId={classData.id} role="teacher"  />
+      )}
+</div>
   )
 }
