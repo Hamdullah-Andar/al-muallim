@@ -458,39 +458,6 @@ export default async function TeacherDashboard() {
 
         {/* Right Column (Upcoming / Activities) */}
         <div className="space-y-8">
-          
-          {/* Upcoming Sessions Card */}
-          <div className="bg-white dark:bg-black/40 p-6 rounded-xl border border-black/5 dark:border-white/5 shadow-sm">
-            <h2 className="text-lg font-bold mb-6 text-[#092B2B] dark:text-white">Upcoming Sessions</h2>
-            
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="bg-[#bdf3df]/40 text-[#092B2B] dark:bg-emerald-900/30 dark:text-emerald-400 p-3 rounded-xl text-center min-w-[64px] font-bold">
-                  <span className="block text-xs uppercase opacity-70">Oct</span>
-                  <span className="text-lg">12</span>
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-[#092B2B] dark:text-white">Advanced Fiqh Q&A</h4>
-                  <p className="text-xs text-gray-500 font-medium">Live Workshop • 2:00 PM</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="bg-[#bdf3df]/40 text-[#092B2B] dark:bg-emerald-900/30 dark:text-emerald-400 p-3 rounded-xl text-center min-w-[64px] font-bold">
-                  <span className="block text-xs uppercase opacity-70">Oct</span>
-                  <span className="text-lg">14</span>
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-[#092B2B] dark:text-white">Arabic Grammar I</h4>
-                  <p className="text-xs text-gray-500 font-medium">Video Lecture • 10:30 AM</p>
-                </div>
-              </div>
-            </div>
-            
-            <button className="w-full mt-6 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-400 transition-colors">
-              View Calendar
-            </button>
-          </div>
 
           {/* Recent Activity Card */}
           <div className="bg-white dark:bg-black/40 p-6 rounded-xl border border-black/5 dark:border-white/5 shadow-sm">
