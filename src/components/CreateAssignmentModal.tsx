@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createAssignment } from '@/app/teacher/class/[id]/actions'
+import { notifyStudentsNewAssignment } from '@/app/actions/notifications'
 
 export default function CreateAssignmentModal({ 
   isOpen, 
@@ -72,6 +73,9 @@ export default function CreateAssignmentModal({
 
     try {
       await createAssignment(formData)
+      // Notify enrolled students of new assignment (fire & forget, non-blocking)
+      const titleValue = (formData.get('title') as string) || category
+      notifyStudentsNewAssignment(classId, titleValue, category).catch(() => {})
       setIsOpen(false)
       alert(`Assignment created successfully!`)
       // Reset form defaults for next time

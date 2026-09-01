@@ -32,7 +32,7 @@ export async function login(formData: FormData) {
   if (error) {
     // If they typed the wrong password (or the account doesn't exist), 
     // we redirect them back to the login page and attach an error message to the URL.
-    redirect('/login?message=Incorrect email or password')
+    redirect('/login?message=' + encodeURIComponent('Incorrect email or password'))
   }
 
   // 4. If successful, we clear the Next.js cache so it knows the user's status changed,

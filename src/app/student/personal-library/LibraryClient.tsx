@@ -1,5 +1,7 @@
 ﻿'use client'
 
+import { notifyResourceRequest } from '@/app/actions/notifications'
+
 import PageHeader from '@/components/ui/PageHeader'
 
 import React, { useState, useMemo } from 'react'
@@ -356,6 +358,8 @@ export default function LibraryClient({
 
   function handleRequestSubmit(e: React.FormEvent) {
     e.preventDefault()
+    // Notify teachers/librarians of the resource request (fire & forget)
+    notifyResourceRequest(requestTitle, requestAuthor || undefined).catch(() => {})
     alert(`Thank you! Your resource request for "${requestTitle}" has been submitted to the library team.`)
     setRequestTitle('')
     setRequestAuthor('')
