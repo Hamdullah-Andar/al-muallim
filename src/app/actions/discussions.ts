@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
+import { createNotification } from './notifications'
 
 // ==========================================
 // 1. Fetch Posts
@@ -104,7 +105,8 @@ export async function createDiscussionPost(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, message: 'Unauthorized' }
 
-  const { error } = await supabase
+  // 1. Create the post
+  const { error, data: newPost } = await supabase
     .from('class_discussions')
     .insert({
       class_id: classId,
@@ -113,10 +115,71 @@ export async function createDiscussionPost(
       message,
       is_announcement: isAnnouncement
     })
+    .select()
+    .single()
 
   if (error) {
     console.error('Error creating post:', error)
     return { success: false, message: error.message }
+  }
+
+  // 2. Fetch Class Details & Enrollments
+  const { data: classData } = await supabase
+    .from('classes')
+    .select('teacher_id, name')
+    .eq('id', classId)
+    .single()
+
+  const { data: enrollments } = await supabase
+    .from('class_students')
+    .select('student_id')
+    .eq('class_id', classId)
+    .eq('is_active', true)
+
+  const teacherId = classData?.teacher_id
+  const studentIds = enrollments?.map(e => e.student_id) || []
+
+  // 3. Send Notifications
+  // Note: the frontend router uses tabs, e.g. /student/class/[id] and activeTab is handled via state or maybe query string if we implemented it, but default is clicking the tab.
+  // We'll just link to the class page.
+  const postUrl = `/student/class/${classId}`
+  const teacherUrl = `/teacher/class/${classId}`
+  const authorId = user.id
+
+  if (isAnnouncement) {
+    for (const studentId of studentIds) {
+      await createNotification(
+        studentId,
+        'classroom',
+        'announcement',
+        `New Announcement: ${classData?.name}`,
+        title,
+        postUrl
+      )
+    }
+  } else {
+    if (teacherId && teacherId !== authorId) {
+      await createNotification(
+        teacherId,
+        'classroom',
+        'discussion',
+        `New Discussion in ${classData?.name}`,
+        title,
+        teacherUrl
+      )
+    }
+    for (const studentId of studentIds) {
+      if (studentId !== authorId) {
+        await createNotification(
+          studentId,
+          'classroom',
+          'discussion',
+          `New Discussion in ${classData?.name}`,
+          title,
+          postUrl
+        )
+      }
+    }
   }
 
   revalidatePath(`/teacher/class/${classId}`)
@@ -124,22 +187,21 @@ export async function createDiscussionPost(
   return { success: true }
 }
 
-// ==========================================
-// 4. Create Reply
+
 // ==========================================
 export async function createReply(postId: string, message: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { success: false, message: 'Unauthorized' }
 
-  // Check if post is locked
   const { data: post } = await supabase
     .from('class_discussions')
-    .select('is_locked, class_id')
+    .select('is_locked, class_id, author_id, title')
     .eq('id', postId)
     .single()
 
-  if (post?.is_locked) {
+  if (!post) return { success: false, message: 'Post not found.' }
+  if (post.is_locked) {
     return { success: false, message: 'This thread is locked.' }
   }
 
@@ -156,7 +218,59 @@ export async function createReply(postId: string, message: string) {
     return { success: false, message: error.message }
   }
 
-  if (post?.class_id) {
+  // Fetch Class Details for Notifications
+  const { data: classData } = await supabase
+    .from('classes')
+    .select('teacher_id, name')
+    .eq('id', post.class_id)
+    .single()
+
+  // Fetch all prior replies to find participants
+  const { data: priorReplies } = await supabase
+    .from('discussion_replies')
+    .select('author_id')
+    .eq('post_id', postId)
+
+  const teacherId = classData?.teacher_id
+  const authorId = user.id
+  const postAuthorId = post.author_id
+
+  const url = `/student/class/${post.class_id}`
+  const teacherUrl = `/teacher/class/${post.class_id}`
+
+  // Build a set of all user IDs that should be notified
+  const participants = new Set<string>()
+  
+  // 1. Original author
+  participants.add(postAuthorId)
+  
+  // 2. The teacher
+  if (teacherId) participants.add(teacherId)
+  
+  // 3. Anyone who has replied
+  if (priorReplies) {
+    for (const r of priorReplies) {
+      participants.add(r.author_id)
+    }
+  }
+
+  // Remove the person who is currently replying
+  participants.delete(authorId)
+
+  // Send notifications
+  for (const participantId of Array.from(participants)) {
+    const notifyUrl = participantId === teacherId ? teacherUrl : url;
+    await createNotification(
+      participantId,
+      'classroom',
+      'reply',
+      participantId === postAuthorId ? 'New Reply on your post' : `New Reply in ${classData?.name}`,
+      `Someone replied to: ${post.title}`,
+      notifyUrl
+    )
+  }
+
+  if (post.class_id) {
     revalidatePath(`/teacher/class/${post.class_id}`)
     revalidatePath(`/student/class/${post.class_id}`)
   }
@@ -164,8 +278,7 @@ export async function createReply(postId: string, message: string) {
   return { success: true }
 }
 
-// ==========================================
-// 5. Delete Post or Reply (Moderation)
+
 // ==========================================
 export async function deletePostOrReply(id: string, type: 'post' | 'reply', classId: string) {
   const supabase = await createClient()
